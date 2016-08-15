@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<features xmlns="http://karaf.apache.org/xmlns/features/v1.0.0">
+
+    <feature name="${project.artifactId}" version="${project.version}" install="auto">	
+        <feature>scr</feature>
+        <bundle>wrap:mvn:org.reactfx/reactfx/2.0-M5</bundle>
+        <bundle>wrap:mvn:com.miglayout/miglayout-core/5.0</bundle>
+        <bundle>wrap:mvn:com.miglayout/miglayout-javafx/5.0</bundle>
+        <bundle>mvn:com.google.guava/guava/19.0</bundle>
+        <bundle>wrap:mvn:de.jensd/fontawesomefx/8.9</bundle>
+        <bundle>mvn:org.controlsfx/controlsfx/8.40.11</bundle>
+        <bundle>mvn:${project.groupId}/com.stackleader.kubefx.core/${project.version}</bundle>
+        <bundle>mvn:${project.groupId}/com.stackleader.kubefx.ui/${project.version}</bundle>
+        <bundle>mvn:${project.groupId}/com.stackleader.kubefx.menu.api/${project.version}</bundle>
+        <bundle>mvn:${project.groupId}/com.stackleader.kubefx.toolbar.api/${project.version}</bundle>
+        <bundle>mvn:${project.groupId}/com.stackleader.kubefx.tabs.api/${project.version}</bundle>
+    </feature>
+
+</features>
