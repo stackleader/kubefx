@@ -1,0 +1,11 @@
+karaf/etc/org.ops4j.pax.logging.cfg
+target
+
+#karaf
+karaf/data/**/*
+karaf/instances
+karaf/lock
+karaf/deploy
+
+distribution/build/
+karaf/local

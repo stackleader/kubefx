@@ -1,0 +1,12 @@
+karaf/bin filter=lfs diff=lfs merge=lfs -text
+karaf/custom filter=lfs diff=lfs merge=lfs -text
+karaf/deploy filter=lfs diff=lfs merge=lfs -text
+karaf/etc filter=lfs diff=lfs merge=lfs -text
+karaf/instances filter=lfs diff=lfs merge=lfs -text
+karaf/lib filter=lfs diff=lfs merge=lfs -text
+karaf/LICENSE filter=lfs diff=lfs merge=lfs -text
+karaf/lock filter=lfs diff=lfs merge=lfs -text
+karaf/NOTICE filter=lfs diff=lfs merge=lfs -text
+karaf/README filter=lfs diff=lfs merge=lfs -text
+karaf/RELEASE-NOTES filter=lfs diff=lfs merge=lfs -text
+karaf/system filter=lfs diff=lfs merge=lfs -text
