@@ -17,15 +17,64 @@
                 <scope>compile</scope>
             </dependency>
             <dependency>
-                <groupId>org.osgi</groupId>
-                <artifactId>org.osgi.compendium</artifactId>
-                <version>5.0.0</version>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-client</artifactId>
+                <version>1.4.4</version>
             </dependency>
             <dependency>
-                <groupId>org.osgi</groupId>
-                <artifactId>org.osgi.annotation</artifactId>
-                <version>6.0.0</version>
-                <scope>compile</scope>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-model</artifactId>
+                <version>1.0.52</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>2.7.5</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>2.7.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>2.7.5</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-yaml</artifactId>
+                <version>2.7.5</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.validation</groupId>
+                <artifactId>validation-api</artifactId>
+                <version>1.1.0.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-jaxb-annotations</artifactId>
+                <version>2.7.5</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.mifmif</groupId>
+                <artifactId>generex</artifactId>
+                <version>1.0.1</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>zjsonpatch</artifactId>
+                <version>0.2.3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.servicemix.bundles</groupId>
+                <artifactId>org.apache.servicemix.bundles.okio</artifactId>
+                <version>1.9.0_1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.servicemix.bundles</groupId>
+                <artifactId>org.apache.servicemix.bundles.okhttp</artifactId>
+                <version>3.4.1_1</version>
             </dependency>
             <dependency>
                 <groupId>org.reactfx</groupId>
@@ -63,6 +112,17 @@
                 <version>19.0</version>
                 <scope>provided</scope>
             </dependency>
+            <dependency>
+                <groupId>org.osgi</groupId>
+                <artifactId>org.osgi.compendium</artifactId>
+                <version>5.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.osgi</groupId>
+                <artifactId>org.osgi.annotation</artifactId>
+                <version>6.0.0</version>
+                <scope>compile</scope>
+            </dependency>
             <!--SLF4j is added as our logging api-->
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -74,6 +134,18 @@
             <dependency>
                 <groupId>com.stackleader</groupId>
                 <artifactId>com.stackleader.kubefx.core</artifactId>
+                <version>${project.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.stackleader</groupId>
+                <artifactId>com.stackleader.kubefx.preferences</artifactId>
+                <version>${project.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.stackleader</groupId>
+                <artifactId>com.stackleader.kubefx.kubernetes.api</artifactId>
                 <version>${project.version}</version>
                 <scope>provided</scope>
             </dependency>
@@ -124,6 +196,8 @@
 
     <modules>
         <module>com.stackleader.kubefx.core</module>
+        <module>com.stackleader.kubefx.preferences</module>
+        <module>com.stackleader.kubefx.kubernetes.api</module>
         <module>com.stackleader.kubefx.ui</module>
         <module>com.stackleader.kubefx.menu.api</module>
         <module>com.stackleader.kubefx.toolbar.api</module>

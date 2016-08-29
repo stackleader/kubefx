@@ -7,6 +7,8 @@ import aQute.bnd.annotation.component.Reference;
 import com.stackleader.kubefx.core.api.StageProvider;
 import java.awt.SplashScreen;
 import javafx.application.Platform;
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -19,17 +21,37 @@ public class KubeFx {
     private static final Logger LOG = LoggerFactory.getLogger(KubeFx.class);
     private Stage stage;
     private Root root;
+    private ConfigurationModal configurationModal;
 
     @Activate
     public void activate() {
         closeSplashScreen();
         initializeFxRuntime();
-        Platform.runLater(() -> {
-            Scene scene = new Scene(root);
-            stage.setTitle("KubeFx");
-            stage.setScene(scene);
-            stage.show();
+
+        ReadOnlyBooleanProperty showConfigScreen = configurationModal.getShowConfigScreen();
+        showConfigScreen.addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) -> {
+            updateScene(newValue);
         });
+        updateScene(showConfigScreen.get());
+    }
+
+    private void updateScene(boolean showConfigScreen) {
+        if (showConfigScreen) {
+            Platform.runLater(() -> {
+                Scene scene = new Scene(configurationModal);
+                stage.setTitle("KubeFx Configuration");
+                stage.setScene(scene);
+                stage.sizeToScene();
+                stage.show();
+            });
+        } else {
+            Platform.runLater(() -> {
+                Scene scene = new Scene(root);
+                stage.setTitle("KubeFx");
+                stage.setScene(scene);
+                stage.show();
+            });
+        }
     }
 
     private void closeSplashScreen() throws IllegalStateException {
@@ -64,6 +86,11 @@ public class KubeFx {
     @Reference
     public void setRoot(Root root) {
         this.root = root;
+    }
+
+    @Reference
+    public void setConfigurationModal(ConfigurationModal configurationModal) {
+        this.configurationModal = configurationModal;
     }
 
 }

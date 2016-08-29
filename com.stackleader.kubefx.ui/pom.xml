@@ -30,6 +30,34 @@
             <groupId>com.stackleader</groupId>
             <artifactId>com.stackleader.kubefx.core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.stackleader</groupId>
+            <artifactId>com.stackleader.kubefx.tabs.api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.stackleader</groupId>
+            <artifactId>com.stackleader.kubefx.kubernetes.api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.controlsfx</groupId>
+            <artifactId>controlsfx</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>de.jensd</groupId>
+            <artifactId>fontawesomefx</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.miglayout</groupId>
+            <artifactId>miglayout-javafx</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.reactfx</groupId>
+            <artifactId>reactfx</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.stackleader</groupId>
+            <artifactId>com.stackleader.kubefx.preferences</artifactId>
+        </dependency>
     </dependencies>
     
     <build>
@@ -47,7 +75,7 @@
                             !${project.artifactId},
                             *
                         </Import-Package>
-                         <Service-Component>*</Service-Component>
+                        <Service-Component>*</Service-Component>
                     </instructions>
                 </configuration>
             </plugin>  
