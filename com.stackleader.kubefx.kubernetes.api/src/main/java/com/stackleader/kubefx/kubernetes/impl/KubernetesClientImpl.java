@@ -120,7 +120,7 @@ public class KubernetesClientImpl implements KubernetesClient {
                             .build();
                     final String selectedNamespace = "default";
 
-                    final String kube = config.getMasterUrl() + "/api/v1/namespaces/" + selectedNamespace + "/pods/" + pod.getName() + "/log?follow=true";
+                    final String kube = config.getMasterUrl() + "api/v1/namespaces/" + selectedNamespace + "/pods/" + pod.getName().get() + "/log?follow=true";
                     Request request = new Request.Builder()
                             .url(kube)
                             .build();
