@@ -5,22 +5,26 @@
  */
 package com.stackleader.kubefx.preferences;
 
+import com.stackleader.kubefx.preferences.internal.NbPreferences;
 import java.io.File;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ *
+ * @author dcnorris
+ */
 public class PreferenceUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(PreferenceUtils.class);
-    private static final String ROOT_PREFERENCE_NODE_NAME = "com/stackleader/kubefx";
+    private static final String KUBEFX_HOME_DIR = ".kubefx";
+
     private static String DATA_HOME_DIR;
 
     public static Preferences getDefaultPrefsNode() {
-        String prefDirPath = getApplicationDataDirectory().getAbsolutePath() + File.separator + "preferences" + File.separator + KubeFxVersion.getVersion() + File.separator;
-        System.setProperty("java.util.prefs.userRoot", prefDirPath);
-        return Preferences.userRoot().node(ROOT_PREFERENCE_NODE_NAME);
+        return NbPreferences.userRootImpl();
     }
 
     public static Preferences getPackagePrefsNode(Class c) {
@@ -43,17 +47,23 @@ public class PreferenceUtils {
 
     public static File getApplicationDataDirectory() {
         if (DATA_HOME_DIR == null) {
-            String kubefxHome = ".kubefx";
-            DATA_HOME_DIR = System.getProperty("user.home") + File.separator + kubefxHome;
-            File kubeFxHomeFile = new File(DATA_HOME_DIR);
-            kubeFxHomeFile.mkdir();
+            DATA_HOME_DIR = System.getProperty("user.home") + File.separator + KUBEFX_HOME_DIR;
+            File igbDataHomeFile = new File(DATA_HOME_DIR);
+            igbDataHomeFile.mkdir();
         }
         return new File(DATA_HOME_DIR + File.separator);
     }
 
+    public static File getPreferenceConfigDirectory() {
+        File applicationDataDirectory = getApplicationDataDirectory();
+        File preferenceConfigDirectory = new File(applicationDataDirectory.getPath() + File.separator + KubeFxVersion.getVersion() + File.separator + "preferences");
+        preferenceConfigDirectory.mkdir();
+        return preferenceConfigDirectory;
+    }
+
     private static String getPreferenceNodeName(String name) {
         final String replace = name.replace('.', '/');
-        return replace.replaceFirst(ROOT_PREFERENCE_NODE_NAME + "/", "");
+        return replace;
     }
 
 }

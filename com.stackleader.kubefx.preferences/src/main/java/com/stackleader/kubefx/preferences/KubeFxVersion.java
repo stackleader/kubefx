@@ -6,20 +6,20 @@
 package com.stackleader.kubefx.preferences;
 
 public class KubeFxVersion {
-    
+
     private final static int MAJOR_VERSION = 0;
     private final static int MINOR_VERSION = 1;
-    
-    public static String getVersion(){
-        return MAJOR_VERSION+"."+MINOR_VERSION;
+
+    public static String getVersion() {
+        return MAJOR_VERSION + "." + MINOR_VERSION;
     }
-    
-    public static int getMajorVersion(){
+
+    public static int getMajorVersion() {
         return MAJOR_VERSION;
     }
-    
-    public static int getMinorVersion(){
+
+    public static int getMinorVersion() {
         return MINOR_VERSION;
     }
-    
+
 }

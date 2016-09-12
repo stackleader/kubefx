@@ -1,6 +1,7 @@
 package com.stackleader.kubefx.kubernetes.impl;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import com.google.common.base.Strings;
 import com.stackleader.kubefx.kubernetes.api.KubernetesClient;
 import com.stackleader.kubefx.kubernetes.api.model.Node;
 import com.stackleader.kubefx.kubernetes.api.model.Pod;
@@ -65,12 +66,26 @@ public class KubernetesClientImpl implements KubernetesClient {
         checkNotNull(props.get("masterUrl"), "masterUrl is required");
         checkNotNull(props.get("username"), "username is required");
         checkNotNull(props.get("password"), "password is required");
-        config = new ConfigBuilder()
-                .withMasterUrl(props.get("masterUrl"))      
-                .withUsername(props.get("username"))
-                .withPassword(props.get("password"))
-                .withTrustCerts(true)
-                .build();
+        String certificateAuthorityData = props.getOrDefault("certificateAuthorityData", "");
+        String clientCertData = props.getOrDefault("clientCertData", "");
+        String clientKeyData = props.getOrDefault("clientKeyData", "");
+        if (Strings.isNullOrEmpty(certificateAuthorityData) || Strings.isNullOrEmpty(clientCertData) || Strings.isNullOrEmpty(clientKeyData)) {
+            config = new ConfigBuilder()
+                    .withMasterUrl(props.get("masterUrl"))
+                    .withUsername(props.get("username"))
+                    .withPassword(props.get("password"))
+                    .withTrustCerts(true)
+                    .build();
+        } else {
+            config = new ConfigBuilder()
+                    .withMasterUrl(props.get("masterUrl"))
+                    .withUsername(props.get("username"))
+                    .withPassword(props.get("password"))
+                    .withCaCertData(certificateAuthorityData)
+                    .withClientCertData(clientCertData)
+                    .withClientKeyData(clientKeyData)
+                    .build();
+        }
         client = new DefaultKubernetesClient(config);
     }
 
@@ -120,7 +135,7 @@ public class KubernetesClientImpl implements KubernetesClient {
                             .build();
                     final String selectedNamespace = "default";
 
-                    final String kube = config.getMasterUrl() + "api/v1/namespaces/" + selectedNamespace + "/pods/" + pod.getName().get() + "/log?follow=true";
+                    final String kube = config.getMasterUrl() + "api/" + config.getApiVersion() + "/namespaces/" + selectedNamespace + "/pods/" + pod.getName().get() + "/log?follow=true";
                     Request request = new Request.Builder()
                             .url(kube)
                             .build();

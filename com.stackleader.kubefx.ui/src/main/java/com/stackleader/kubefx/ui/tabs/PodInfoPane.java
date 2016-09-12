@@ -61,7 +61,7 @@ public class PodInfoPane extends StackPane {
 
     public PodInfoPane() {
         updateStream = new EventSource<>();
-        logContent = new LinkedBlockingDeque<>(1000);
+        logContent = new LinkedBlockingDeque<>(10_000);
         label = new Label();
         startTail = new Button("Tail");
         stopTail = new Button("Stop");
@@ -117,7 +117,9 @@ public class PodInfoPane extends StackPane {
                             InputStream is = response.body().byteStream()) {
                         byte[] bytes = new byte[1000];
                         while (!logRequestCall.isCanceled() && is.read(bytes) > -1) {
-                            logContent.add(new String(bytes));
+                            if (logContent.remainingCapacity() > 0) {
+                                logContent.add(new String(bytes));
+                            }
                             updateStream.emit(null);
                         }
                     } catch (IOException ex) {

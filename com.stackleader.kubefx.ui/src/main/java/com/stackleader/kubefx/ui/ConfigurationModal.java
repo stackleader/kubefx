@@ -4,7 +4,9 @@ import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Reference;
 import com.stackleader.kubefx.kubernetes.api.KubernetesClient;
+import com.stackleader.kubefx.kubernetes.api.KubeConfigUtils;
 import com.stackleader.kubefx.preferences.PreferenceUtils;
+import java.io.File;
 import java.io.IOException;
 import java.util.Hashtable;
 import java.util.prefs.Preferences;
@@ -74,7 +76,7 @@ public class ConfigurationModal extends StackPane {
         loginBtn = new Button("Login");
         remeber = new CheckBox("Remember my credentials");
         remeber.setSelected(true);
-        remeber.setDisable(true);   
+        remeber.setDisable(true);
         migPane.add(remeber, "skip, wrap");
         migPane.add(loginBtn, "growx, span 2");
         getChildren().add(migPane);
@@ -94,6 +96,9 @@ public class ConfigurationModal extends StackPane {
     }
 
     private void checkConfiguration() {
+        //first parse ~/.kube/config, else show configuration screen
+        File configFile = new File(System.getProperty("user.home") + File.separator + ".kube" + File.separator + "config");
+        KubeConfigUtils.parseKubeConfigToPreferenceNode(configFile);
         String masterUrl = kubeClientConfigPrefNode.get("masterUrl", null);
         String username = kubeClientConfigPrefNode.get("username", null);
         String password = kubeClientConfigPrefNode.get("password", null);
@@ -151,10 +156,16 @@ public class ConfigurationModal extends StackPane {
             String masterUrl = node.get("masterUrl", null);
             String username = node.get("username", null);
             String password = node.get("password", null);
+            String certificateAuthorityData = node.get("certificateAuthorityData", null);
+            String clientCertData = node.get("clientCertData", null);
+            String clientKeyData = node.get("clientKeyData", null);
             if (masterUrl != null && username != null && password != null) {
                 properties.put("masterUrl", masterUrl);
                 properties.put("username", username);
                 properties.put("password", password);
+                properties.put("certificateAuthorityData", certificateAuthorityData);
+                properties.put("clientCertData", clientCertData);
+                properties.put("clientKeyData", clientKeyData);
                 configuration.update(properties);
             }
         } catch (IOException ex) {
