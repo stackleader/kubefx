@@ -6,34 +6,29 @@ import aQute.bnd.annotation.component.Reference;
 import com.stackleader.kubefx.kubernetes.api.KubernetesClient;
 import com.stackleader.kubefx.kubernetes.api.model.Pod;
 import com.stackleader.kubefx.ui.selections.SelectionInfo;
+import static com.stackleader.kubefx.ui.utils.FXUtilities.runAndWait;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingDeque;
 import javafx.application.Platform;
 import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.geometry.Orientation;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.control.SplitPane;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
-import javafx.scene.layout.HBox;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
 import okhttp3.Call;
 import okhttp3.Response;
-import org.controlsfx.control.spreadsheet.GridBase;
-import org.controlsfx.control.spreadsheet.SpreadsheetCell;
-import org.controlsfx.control.spreadsheet.SpreadsheetCellType;
-import org.controlsfx.control.spreadsheet.SpreadsheetView;
 import org.osgi.framework.BundleContext;
 import org.reactfx.EventSource;
 import org.slf4j.Logger;
@@ -49,11 +44,22 @@ public class PodInfoPane extends StackPane {
     private static final Logger LOG = LoggerFactory.getLogger(PodInfoPane.class);
     private KubernetesClient client;
     private SelectionInfo selectionInfo;
-    private SpreadsheetView spreadsheetView;
-    private Label label;
+    @FXML
     private Button startTail;
+    @FXML
     private Button stopTail;
+    @FXML
+    private Button copyBtn;
+    @FXML
+    private Button clearBtn;
+    @FXML
     private TextArea logsTextArea;
+    @FXML
+    private TableView<Pod> podTable;
+    @FXML
+    private TableColumn nameColumn;
+    @FXML
+    private TableColumn startTimeColumn;
     private Pod selectedPod;
     private Call logRequestCall;
     private final BlockingDeque<String> logContent;
@@ -62,37 +68,32 @@ public class PodInfoPane extends StackPane {
     public PodInfoPane() {
         updateStream = new EventSource<>();
         logContent = new LinkedBlockingDeque<>(10_000);
-        label = new Label();
-        startTail = new Button("Tail");
-        stopTail = new Button("Stop");
-        HBox hBox = new HBox(label, startTail, stopTail);
-        hBox.setSpacing(5);
-        logsTextArea = new TextArea();
-        logsTextArea.setEditable(false);
-//            initSpreadSheet();
-        VBox vBox = new VBox(hBox);
-        SplitPane splitPane = new SplitPane(vBox, logsTextArea);
-        splitPane.setOrientation(Orientation.VERTICAL);
-        splitPane.setDividerPositions(.50);
-        getChildren().add(splitPane);
-    }
-
-    private void initSpreadSheet() {
-        spreadsheetView = new SpreadsheetView(new GridBase(5, 5));
-        spreadsheetView.setShowRowHeader(true);
-        spreadsheetView.setShowColumnHeader(true);
-        spreadsheetView.setRowHeaderWidth(140);
-        spreadsheetView.editableProperty().set(false);
-        spreadsheetView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-        spreadsheetView.setFixingColumnsAllowed(false);
-        spreadsheetView.setFixingRowsAllowed(false);
-        spreadsheetView.getContextMenu().getItems().clear();
+        final URL resource = PodInfoPane.class.getClassLoader().getResource("podInfo.fxml");
+        FXMLLoader fxmlLoader = new FXMLLoader(resource);
+        fxmlLoader.setClassLoader(this.getClass().getClassLoader());
+        fxmlLoader.setController(this);
+        runAndWait(() -> {
+            try {
+                StackPane root = fxmlLoader.load();
+                AnchorPane.setBottomAnchor(root, 0d);
+                AnchorPane.setLeftAnchor(root, 0d);
+                AnchorPane.setRightAnchor(root, 0d);
+                AnchorPane.setTopAnchor(root, 0d);
+                AnchorPane wrapper = new AnchorPane(root);
+                getChildren().add(wrapper);
+            } catch (IOException exception) {
+                throw new RuntimeException(exception);
+            }
+        });
     }
 
     @Activate
     public void activate(BundleContext bc) {
-        logsTextArea.getStylesheets().add(bc.getBundle().getEntry("consoleStyle.css").toExternalForm());
-        updateStream.successionEnds(Duration.ofSeconds(1)).subscribe(e -> {
+        Platform.runLater(() -> {
+            logsTextArea.setEditable(false);
+            logsTextArea.getStylesheets().add(bc.getBundle().getEntry("consoleStyle.css").toExternalForm());
+        });
+        updateStream.successionEnds(Duration.ofMillis(500)).subscribe(e -> {
             final ArrayList<String> logLines = new ArrayList<String>();
             logContent.drainTo(logLines);
             final String joinedLogLines = String.join("", logLines);
@@ -101,16 +102,29 @@ public class PodInfoPane extends StackPane {
                 logsTextArea.appendText(joinedLogLines);
             });
         });
+        nameColumn.setCellValueFactory(
+                new PropertyValueFactory<Pod, String>("name")
+        );
+        startTimeColumn.setCellValueFactory(
+                new PropertyValueFactory<Pod, String>("startTime")
+        );
+        nameColumn.prefWidthProperty().bind(podTable.widthProperty().divide(2)); 
+        startTimeColumn.prefWidthProperty().bind(podTable.widthProperty().divide(2)); 
         selectionInfo.getSelectedPod().addListener((ObservableValue<? extends Optional<Pod>> observable, Optional<Pod> oldValue, Optional<Pod> newValue) -> {
             newValue.ifPresent((Pod selectedPod) -> {
                 logsTextArea.clear();
-                label.setText(selectedPod.getName().get());
+//                label.setText(selectedPod.getName().get());
                 this.selectedPod = selectedPod;
 //                updateSpreadSheet();
+                podTable.getItems().clear();
+                podTable.getItems().add(selectedPod);
+
             });
         });
         startTail.setOnAction(event -> {
             if (selectedPod != null) {
+                logContent.add("Starting Tail");
+                updateStream.emit(null);
                 logRequestCall = client.tailLogs(selectedPod);
                 CompletableFuture.runAsync(() -> {
                     try (Response response = logRequestCall.execute();
@@ -147,34 +161,4 @@ public class PodInfoPane extends StackPane {
         this.client = client;
     }
 
-    private void updateSpreadSheet() {
-        final List<String> rowHeaders = new ArrayList<>();
-        rowHeaders.add("name");
-        rowHeaders.add("started");
-        rowHeaders.add("ip");
-        int rowCount = rowHeaders.size();
-        int columnCount = 1;
-        GridBase grid = new GridBase(rowCount, columnCount);
-        ObservableList<ObservableList<SpreadsheetCell>> rows = FXCollections.observableArrayList();
-        for (int row = 0; row < grid.getRowCount(); ++row) {
-            final ObservableList<SpreadsheetCell> list = FXCollections.observableArrayList();
-            for (int column = 0; column < grid.getColumnCount(); ++column) {
-                final String cellValue = selectedPod.getName().get();
-                final SpreadsheetCell gridCell = SpreadsheetCellType.STRING.createCell(row, column, 1, 1, cellValue);
-                gridCell.setWrapText(true);
-                //cellValue=StringUtils.abbreviate(cellValue,20); //TODO consider if this would be useful
-                list.add(gridCell);
-            }
-            rows.add(list);
-        }
-        grid.getColumnHeaders().clear();
-        for (int column = 0; column < grid.getColumnCount(); ++column) {
-            grid.getColumnHeaders().add("...");
-        }
-        grid.getRowHeaders().clear();
-        grid.getRowHeaders().addAll(rowHeaders);
-        grid.setRows(rows);
-        spreadsheetView.setGrid(grid);
-        spreadsheetView.getColumns().forEach(column -> column.fitColumn());
-    }
 }

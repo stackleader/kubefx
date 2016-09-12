@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ExecutionException;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.geometry.Side;
@@ -83,33 +82,25 @@ public class TabPaneManager {
     }
 
     private synchronized void addTab(TabPane tabPane, TabProvider tabProvider) {
-        try {
-            runAndWait(() -> {
-                Tab selectedTab = tabPane.getSelectionModel().selectedItemProperty().get();
-                final ObservableList<Tab> currentTabs = tabPane.getTabs();
-                Set<TabProvider> sortedTabs = tabPositions.get(tabPane);
-                sortedTabs.add(tabProvider);
-                currentTabs.clear();
-                sortedTabs.forEach(tp -> currentTabs.add(tp.getTab()));
-                tabPane.getSelectionModel().select(selectedTab);
-            });
-        } catch (InterruptedException | ExecutionException ex) {
-            LOG.error(ex.getMessage(), ex);
-        }
+        runAndWait(() -> {
+            Tab selectedTab = tabPane.getSelectionModel().selectedItemProperty().get();
+            final ObservableList<Tab> currentTabs = tabPane.getTabs();
+            Set<TabProvider> sortedTabs = tabPositions.get(tabPane);
+            sortedTabs.add(tabProvider);
+            currentTabs.clear();
+            sortedTabs.forEach(tp -> currentTabs.add(tp.getTab()));
+            tabPane.getSelectionModel().select(selectedTab);
+        });
     }
 
     private synchronized void removeTab(TabPane tabPane, TabProvider tabProvider) {
-        try {
-            runAndWait(() -> {
-                final ObservableList<Tab> currentTabs = tabPane.getTabs();
-                Set<TabProvider> sortedTabs = tabPositions.get(tabPane);
-                sortedTabs.remove(tabProvider);
-                currentTabs.clear();
-                sortedTabs.forEach(tp -> currentTabs.add(tp.getTab()));
-            });
-        } catch (InterruptedException | ExecutionException ex) {
-            LOG.error(ex.getMessage(), ex);
-        }
+        runAndWait(() -> {
+            final ObservableList<Tab> currentTabs = tabPane.getTabs();
+            Set<TabProvider> sortedTabs = tabPositions.get(tabPane);
+            sortedTabs.remove(tabProvider);
+            currentTabs.clear();
+            sortedTabs.forEach(tp -> currentTabs.add(tp.getTab()));
+        });
     }
 
     public void removeTab(TabProvider tabProvider) {

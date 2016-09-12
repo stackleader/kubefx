@@ -22,28 +22,28 @@ public class Pod {
         podIp = new SimpleStringProperty(pod.getStatus().getPodIP());
     }
 
-    public ReadOnlyStringProperty getName() {
+    public String getName() {
+        return name.get();
+    }
+
+    public ReadOnlyStringProperty nameProperty() {
         return name;
     }
 
-    public ReadOnlyStringProperty name() {
-        return name;
+    public String getStartTime() {
+        return startTime.get();
     }
 
-    public StringProperty getStartTime() {
-        return startTime;
-    }
-
-    public StringProperty getPodIp() {
+    public StringProperty getPodIpProperty() {
         return podIp;
     }
 
-    public ReadOnlyStringProperty startTime() {
+    public ReadOnlyStringProperty startTimeProperty() {
         return startTime;
     }
 
-    public ReadOnlyStringProperty podIp() {
-        return podIp;
+    public String podIp() {
+        return podIp.get();
     }
 
     @Override
