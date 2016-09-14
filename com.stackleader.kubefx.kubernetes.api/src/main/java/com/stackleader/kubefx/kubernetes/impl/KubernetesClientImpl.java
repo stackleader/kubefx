@@ -5,6 +5,7 @@ import com.google.common.base.Strings;
 import com.stackleader.kubefx.kubernetes.api.KubernetesClient;
 import com.stackleader.kubefx.kubernetes.api.model.Node;
 import com.stackleader.kubefx.kubernetes.api.model.Pod;
+import com.stackleader.kubefx.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
@@ -107,12 +108,18 @@ public class KubernetesClientImpl implements KubernetesClient {
 
     @Override
     public List<Node> getNodes() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        if (client != null) {
+            return client.nodes().list().getItems().stream().map(node -> new Node(node)).collect(toList());
+        }
+        return Collections.EMPTY_LIST;
     }
 
     @Override
-    public List<Node> getNodes(String namespace) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public List<Service> getServices() {
+        if (client != null) {
+            return client.services().list().getItems().stream().map(service -> new Service(service)).collect(toList());
+        }
+        return Collections.EMPTY_LIST;
     }
 
     @Override

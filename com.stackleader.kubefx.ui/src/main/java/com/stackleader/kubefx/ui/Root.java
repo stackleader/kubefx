@@ -4,6 +4,7 @@ import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Reference;
 import com.stackleader.kubefx.ui.footer.Footer;
+import com.stackleader.kubefx.ui.footer.LogoBanner;
 import java.awt.DisplayMode;
 import java.awt.GraphicsEnvironment;
 import javafx.application.Platform;
@@ -21,6 +22,7 @@ public class Root extends VBox {
     private MainSplitPane mainSplitPane;
     private StackPane stackPane;
     private Footer footer;
+    private LogoBanner logoBanner;
 
     public Root() {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
@@ -38,6 +40,7 @@ public class Root extends VBox {
             stackPane.getChildren().add(mainSplitPane);
 //            getChildren().add(menuBarManager.getMenuBar());
 //            getChildren().add(toolbarProvider.getTopToolbar());
+            getChildren().add(logoBanner);
             getChildren().add(stackPane);
             getChildren().add(footer);
         });
@@ -57,6 +60,17 @@ public class Root extends VBox {
     @Reference(unbind = "removeFooter")
     public void setFooter(Footer footer) {
         this.footer = footer;
+    }
+
+    @Reference(unbind = "removeLogoBanner")
+    public void setLogoBanner(LogoBanner logoBanner) {
+        this.logoBanner = logoBanner;
+    }
+
+    public void removeLogoBanner(LogoBanner logoBanner) {
+        Platform.runLater(() -> {
+            getChildren().remove(logoBanner);
+        });
     }
 
     public void removeFooter(Footer footer) {

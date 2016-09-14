@@ -1,8 +1,19 @@
 package com.stackleader.kubefx.ui.tabs;
 
+import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
+import aQute.bnd.annotation.component.Reference;
+import com.stackleader.kubefx.kubernetes.api.KubernetesClient;
+import com.stackleader.kubefx.kubernetes.api.model.Node;
 import com.stackleader.kubefx.tabs.api.TabDockingPosition;
 import com.stackleader.kubefx.tabs.api.TabProvider;
+import com.stackleader.kubefx.ui.selections.SelectionInfo;
+import java.util.List;
+import java.util.Optional;
+import javafx.application.Platform;
+import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.scene.control.Tab;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
@@ -14,8 +25,31 @@ import javafx.scene.layout.StackPane;
 @Component(immediate = true)
 public class NodesTab extends Tab implements TabProvider {
 
+    private KubernetesClient client;
+    private ObservableList<Node> nodes;
+    private StackPane tabContent;
+    private SelectionInfo selectionInfo;
+    private PodInfoPane podInfoPane;
+    private NodeStatusTable<Node> nodesTable;
+
     public NodesTab() {
         setText("Nodes");
+        nodes = FXCollections.observableArrayList();
+        nodesTable = new NodeStatusTable<>(nodes);
+        nodesTable.setItems(nodes);
+        tabContent = new StackPane(nodesTable);
+        setContent(tabContent);
+    }
+
+    @Activate
+    public void activate() {
+        List<Node> clientPods = client.getNodes();
+        clientPods.forEach(pod -> {
+            Platform.runLater(() -> {
+                nodes.add(pod);
+            });
+        });
+        initializeSelectionListeners();
     }
 
     @Override
@@ -28,14 +62,36 @@ public class NodesTab extends Tab implements TabProvider {
         return TabDockingPosition.LEFT;
     }
 
+ 
     @Override
     public int getTabWeight() {
         return 1;
     }
 
+    @Reference
+    public void setClient(KubernetesClient client) {
+        this.client = client;
+    }
+
+    @Reference
+    public void setSelectionInfo(SelectionInfo selectionInfo) {
+        this.selectionInfo = selectionInfo;
+    }
+
+    @Reference
+    public void setPodInfoPane(PodInfoPane podInfoPane) {
+        this.podInfoPane = podInfoPane;
+    }
+
+    private void initializeSelectionListeners() {
+        nodesTable.getSelectionModel().selectedItemProperty().addListener((ObservableValue<? extends Node> observable, Node oldValue, Node newValue) -> {
+            selectionInfo.getSelectedNode().setValue(Optional.ofNullable(newValue));
+        });
+    }
+
     @Override
     public Pane getInfoPane() {
-      return new StackPane();
+        return podInfoPane;
     }
 
 }

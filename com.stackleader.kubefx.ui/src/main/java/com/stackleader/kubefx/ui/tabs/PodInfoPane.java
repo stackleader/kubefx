@@ -3,10 +3,13 @@ package com.stackleader.kubefx.ui.tabs;
 import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Reference;
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 import com.stackleader.kubefx.kubernetes.api.KubernetesClient;
 import com.stackleader.kubefx.kubernetes.api.model.Pod;
 import com.stackleader.kubefx.ui.selections.SelectionInfo;
 import static com.stackleader.kubefx.ui.utils.FXUtilities.runAndWait;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -16,6 +19,7 @@ import java.util.Optional;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.logging.Level;
 import javafx.application.Platform;
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
@@ -90,6 +94,7 @@ public class PodInfoPane extends StackPane {
     @Activate
     public void activate(BundleContext bc) {
         Platform.runLater(() -> {
+            podTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
             logsTextArea.setEditable(false);
             logsTextArea.getStylesheets().add(bc.getBundle().getEntry("consoleStyle.css").toExternalForm());
         });
@@ -97,6 +102,12 @@ public class PodInfoPane extends StackPane {
             final ArrayList<String> logLines = new ArrayList<String>();
             logContent.drainTo(logLines);
             final String joinedLogLines = String.join("", logLines);
+            try {
+                File file = new File("test.txt");
+                Files.write(joinedLogLines, file, Charsets.UTF_8);
+            } catch (IOException ex) {
+                java.util.logging.Logger.getLogger(PodInfoPane.class.getName()).log(Level.SEVERE, null, ex);
+            }
             Platform.runLater(() -> {
                 logsTextArea.selectEnd();
                 logsTextArea.appendText(joinedLogLines);
@@ -108,8 +119,8 @@ public class PodInfoPane extends StackPane {
         startTimeColumn.setCellValueFactory(
                 new PropertyValueFactory<Pod, String>("startTime")
         );
-        nameColumn.prefWidthProperty().bind(podTable.widthProperty().divide(2)); 
-        startTimeColumn.prefWidthProperty().bind(podTable.widthProperty().divide(2)); 
+        nameColumn.prefWidthProperty().bind(podTable.widthProperty().divide(2));
+        startTimeColumn.prefWidthProperty().bind(podTable.widthProperty().divide(2));
         selectionInfo.getSelectedPod().addListener((ObservableValue<? extends Optional<Pod>> observable, Optional<Pod> oldValue, Optional<Pod> newValue) -> {
             newValue.ifPresent((Pod selectedPod) -> {
                 logsTextArea.clear();

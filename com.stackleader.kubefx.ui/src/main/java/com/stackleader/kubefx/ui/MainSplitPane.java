@@ -32,7 +32,7 @@ public class MainSplitPane extends SplitPane {
         rightSide = new StackPane();
         getItems().add(leftSide);
         getItems().add(rightSide);
-        setDividerPositions(0.15);
+        setDividerPositions(0.35);
     }
 
     @Activate

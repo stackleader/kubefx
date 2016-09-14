@@ -1,7 +1,6 @@
 package com.stackleader.kubefx.kubernetes.api.model;
 
 import com.google.common.base.Joiner;
-import io.fabric8.kubernetes.api.model.NodeCondition;
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
@@ -15,17 +14,17 @@ import javafx.beans.property.StringProperty;
  *
  * @author dcnorris
  */
-public class Node {
+public class Service {
 
     private StringProperty name;
     private StringProperty startTime;
-    private StringProperty nodeIp;
-    io.fabric8.kubernetes.api.model.Node node;
+    private StringProperty serviceIp;
+    io.fabric8.kubernetes.api.model.Service service;
 
-    public Node(io.fabric8.kubernetes.api.model.Node node) {
-        this.node = node;
-        name = new SimpleStringProperty(node.getMetadata().getName());
-        startTime = new SimpleStringProperty(node.getMetadata().getCreationTimestamp());
+    public Service(io.fabric8.kubernetes.api.model.Service service) {
+        this.service = service;
+        name = new SimpleStringProperty(service.getMetadata().getName());
+        startTime = new SimpleStringProperty(service.getMetadata().getCreationTimestamp());
     }
 
     public String getName() {
@@ -40,8 +39,18 @@ public class Node {
         return startTime.get();
     }
 
-    public String getLabelString() {
-        return node.getMetadata().getLabels().toString();
+    public String getClusterIp() {
+        return service.getSpec().getClusterIP();
+    }
+
+    public String getExternalIp() {
+        return Joiner.on(",").join(service.getStatus().getLoadBalancer().getIngress().stream().map(ingress->ingress.getIp()).collect(toList()));
+    }
+
+    public String getPorts() {
+        List<String> portStrings = service.getSpec().getPorts().stream().map(port -> port.getPort() + "/" + port.getProtocol()).collect(toList());
+        String portsInfo = Joiner.on(",").join(portStrings);
+        return portsInfo;
     }
 
     public String getAge() {
@@ -51,30 +60,23 @@ public class Node {
         return ageInDays + "d";
     }
 
-    public String getStatus() {
-        final List<NodeCondition> conditions = node.getStatus().getConditions();
-        if (!conditions.isEmpty()) {
-            final List<String> conditionTypes = conditions.stream().map(condition -> condition.getType()).collect(toList());
-            if (conditionTypes.contains("Ready")) {
-                return "Ready";
-            } else {
-                return Joiner.on(",").join(conditionTypes);
-            }
-        }
-        return "?";
-    }
-
-    public StringProperty getNodeIpProperty() {
-        return nodeIp;
+//    public String getStatus() {
+//        return service.getStatus().getPhase();
+//    }
+    public StringProperty getServiceIpProperty() {
+        return serviceIp;
     }
 
     public ReadOnlyStringProperty startTimeProperty() {
         return startTime;
     }
 
+    public String serviceIp() {
+        return serviceIp.get();
+    }
+
     @Override
     public String toString() {
         return name.get();
     }
-
 }

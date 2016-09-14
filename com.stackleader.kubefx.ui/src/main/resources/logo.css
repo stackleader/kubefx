@@ -1,0 +1,7 @@
+.kubefx-banner{
+    -fx-padding: 0.0 0.0 1.0 0.0;
+    -fx-background-color: #292929;
+    -fx-background-insets: 0.0, 0.0 0.0 1.0 0.0;
+    -fx-background-radius: 0.0, 0.0;
+    -fx-alignment: center-right;  
+}

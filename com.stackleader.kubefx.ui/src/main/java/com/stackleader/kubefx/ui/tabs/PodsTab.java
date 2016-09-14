@@ -14,7 +14,6 @@ import javafx.application.Platform;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.scene.control.ListView;
 import javafx.scene.control.Tab;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
@@ -28,16 +27,17 @@ public class PodsTab extends Tab implements TabProvider {
 
     private KubernetesClient client;
     private ObservableList<Pod> pods;
-    private ListView<Pod> listView;
     private StackPane tabContent;
     private SelectionInfo selectionInfo;
     private PodInfoPane podInfoPane;
+    private PodStatusTable<Pod> podTable;
 
     public PodsTab() {
         setText("Pods");
         pods = FXCollections.observableArrayList();
-        listView = new ListView<Pod>(pods);
-        tabContent = new StackPane(listView);
+        podTable = new PodStatusTable<>(pods);
+        podTable.setItems(pods);
+        tabContent = new StackPane(podTable);
         setContent(tabContent);
     }
 
@@ -83,10 +83,9 @@ public class PodsTab extends Tab implements TabProvider {
     }
 
     private void initializeSelectionListeners() {
-        listView.getSelectionModel().selectedItemProperty()
-                .addListener((ObservableValue<? extends Pod> observable, Pod oldValue, Pod newValue) -> {
-                    selectionInfo.getSelectedPod().setValue(Optional.ofNullable(newValue));
-                });
+        podTable.getSelectionModel().selectedItemProperty().addListener((ObservableValue<? extends Pod> observable, Pod oldValue, Pod newValue) -> {
+            selectionInfo.getSelectedPod().setValue(Optional.ofNullable(newValue));
+        });
     }
 
     @Override

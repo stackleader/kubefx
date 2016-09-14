@@ -2,6 +2,7 @@ package com.stackleader.kubefx.kubernetes.api;
 
 import com.stackleader.kubefx.kubernetes.api.model.Node;
 import com.stackleader.kubefx.kubernetes.api.model.Pod;
+import com.stackleader.kubefx.kubernetes.api.model.Service;
 import java.util.List;
 import okhttp3.Call;
 
@@ -19,7 +20,7 @@ public interface KubernetesClient {
 
     List<Node> getNodes();
 
-    List<Node> getNodes(String namespace);
+    List<Service> getServices();
 
     Call tailLogs(Pod pod);
 
