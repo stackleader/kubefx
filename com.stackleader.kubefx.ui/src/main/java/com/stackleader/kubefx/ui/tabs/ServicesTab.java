@@ -29,7 +29,6 @@ public class ServicesTab extends Tab implements TabProvider {
     private ObservableList<Service> nodes;
     private StackPane tabContent;
     private SelectionInfo selectionInfo;
-    private PodInfoPane podInfoPane;
     private ServiceStatusTable<Service> nodesTable;
 
     public ServicesTab() {
@@ -77,11 +76,6 @@ public class ServicesTab extends Tab implements TabProvider {
         this.selectionInfo = selectionInfo;
     }
 
-    @Reference
-    public void setPodInfoPane(PodInfoPane podInfoPane) {
-        this.podInfoPane = podInfoPane;
-    }
-
     private void initializeSelectionListeners() {
         nodesTable.getSelectionModel().selectedItemProperty().addListener((ObservableValue<? extends Service> observable, Service oldValue, Service newValue) -> {
             selectionInfo.getSelectedService().setValue(Optional.ofNullable(newValue));
@@ -90,7 +84,7 @@ public class ServicesTab extends Tab implements TabProvider {
 
     @Override
     public Pane getInfoPane() {
-        return podInfoPane;
+        return new Pane();
     }
 
 }
