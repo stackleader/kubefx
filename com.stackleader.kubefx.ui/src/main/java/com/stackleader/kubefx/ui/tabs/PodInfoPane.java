@@ -21,16 +21,20 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.logging.Level;
 import javafx.application.Platform;
+import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.StackPane;
+import javafx.util.Callback;
+import javafx.util.Pair;
 import okhttp3.Call;
 import okhttp3.Response;
 import org.osgi.framework.BundleContext;
@@ -59,19 +63,40 @@ public class PodInfoPane extends StackPane {
     @FXML
     private TextArea logsTextArea;
     @FXML
-    private TableView<Pod> podTable;
-    @FXML
-    private TableColumn nameColumn;
-    @FXML
-    private TableColumn startTimeColumn;
+    private AnchorPane infoAnchorPane;
+    final TableView<Pair<String, String>> infoTable;
     private Pod selectedPod;
     private Call logRequestCall;
     private final BlockingDeque<String> logContent;
     private EventSource<Void> updateStream;
+    public ObservableList<Pair<String, String>> data;
 
     public PodInfoPane() {
+        infoTable = new TableView<>();
         updateStream = new EventSource<>();
         logContent = new LinkedBlockingDeque<>(10_000);
+
+        data = FXCollections.observableArrayList();
+        infoTable.setItems(data);
+         // table definition
+        TableColumn<Pair<String, String>, String> nameColumn = new TableColumn<>("NAME");
+        TableColumn<Pair<String, String>, String> valueColumn = new TableColumn<>("VALUE");
+        valueColumn.setSortable(false);
+
+        nameColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<Pair<String, String>, String>, ObservableValue<String>>() {
+            @Override
+            public ObservableValue<String> call(TableColumn.CellDataFeatures<Pair<String, String>, String> param) {
+                return new ReadOnlyStringWrapper(param.getValue().getKey());
+            }
+        });
+       valueColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<Pair<String, String>, String>, ObservableValue<String>>() {
+            @Override
+            public ObservableValue<String> call(TableColumn.CellDataFeatures<Pair<String, String>, String> param) {
+                  return new ReadOnlyStringWrapper(param.getValue().getValue());
+            }
+        });
+
+        infoTable.getColumns().setAll(nameColumn, valueColumn);
         final URL resource = PodInfoPane.class.getClassLoader().getResource("podInfo.fxml");
         FXMLLoader fxmlLoader = new FXMLLoader(resource);
         fxmlLoader.setClassLoader(this.getClass().getClassLoader());
@@ -79,6 +104,13 @@ public class PodInfoPane extends StackPane {
         runAndWait(() -> {
             try {
                 StackPane root = fxmlLoader.load();
+
+                AnchorPane.setBottomAnchor(infoTable, 0d);
+                AnchorPane.setLeftAnchor(infoTable, 0d);
+                AnchorPane.setRightAnchor(infoTable, 0d);
+                AnchorPane.setTopAnchor(infoTable, 0d);
+                infoAnchorPane.getChildren().add(infoTable);
+
                 AnchorPane.setBottomAnchor(root, 0d);
                 AnchorPane.setLeftAnchor(root, 0d);
                 AnchorPane.setRightAnchor(root, 0d);
@@ -94,7 +126,7 @@ public class PodInfoPane extends StackPane {
     @Activate
     public void activate(BundleContext bc) {
         Platform.runLater(() -> {
-            podTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+            infoTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
             logsTextArea.setEditable(false);
             logsTextArea.getStylesheets().add(bc.getBundle().getEntry("consoleStyle.css").toExternalForm());
         });
@@ -113,23 +145,14 @@ public class PodInfoPane extends StackPane {
                 logsTextArea.appendText(joinedLogLines);
             });
         });
-        nameColumn.setCellValueFactory(
-                new PropertyValueFactory<Pod, String>("name")
-        );
-        startTimeColumn.setCellValueFactory(
-                new PropertyValueFactory<Pod, String>("startTime")
-        );
-        nameColumn.prefWidthProperty().bind(podTable.widthProperty().divide(2));
-        startTimeColumn.prefWidthProperty().bind(podTable.widthProperty().divide(2));
         selectionInfo.getSelectedPod().addListener((ObservableValue<? extends Optional<Pod>> observable, Optional<Pod> oldValue, Optional<Pod> newValue) -> {
             newValue.ifPresent((Pod selectedPod) -> {
-                logsTextArea.clear();
-//                label.setText(selectedPod.getName().get());
-                this.selectedPod = selectedPod;
-//                updateSpreadSheet();
-                podTable.getItems().clear();
-                podTable.getItems().add(selectedPod);
-
+                Platform.runLater(() -> {
+                    logsTextArea.clear();
+                    this.selectedPod = selectedPod;
+                    data.clear();
+                    data.addAll(selectedPod.getAttributes());
+                });
             });
         });
         startTail.setOnAction(event -> {

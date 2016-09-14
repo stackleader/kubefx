@@ -29,7 +29,7 @@ public class NodesTab extends Tab implements TabProvider {
     private ObservableList<Node> nodes;
     private StackPane tabContent;
     private SelectionInfo selectionInfo;
-    private PodInfoPane podInfoPane;
+    private NodeInfoPane podInfoPane;
     private NodeStatusTable<Node> nodesTable;
 
     public NodesTab() {
@@ -79,8 +79,8 @@ public class NodesTab extends Tab implements TabProvider {
     }
 
     @Reference
-    public void setPodInfoPane(PodInfoPane podInfoPane) {
-        this.podInfoPane = podInfoPane;
+    public void setPodInfoPane(NodeInfoPane nodeInfoPane) {
+        this.podInfoPane = nodeInfoPane;
     }
 
     private void initializeSelectionListeners() {

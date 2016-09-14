@@ -4,10 +4,13 @@ import io.fabric8.kubernetes.api.model.ContainerStatus;
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import static java.util.stream.Collectors.toList;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.util.Pair;
 
 /**
  *
@@ -67,6 +70,17 @@ public class Pod {
 
     public String podIp() {
         return podIp.get();
+    }
+
+    //TODO implement this more thoughtfully with all relevant pod info displayed
+    public List<Pair<String, String>> getAttributes() {
+        final List<Pair<String, String>> attributes = new ArrayList<>();
+        attributes.add(new Pair<>("namespace", pod.getMetadata().getNamespace()));
+        attributes.add(new Pair<>("creationTimestamp", pod.getMetadata().getCreationTimestamp()));
+        attributes.add(new Pair<>("uid", pod.getMetadata().getUid()));
+        attributes.addAll(pod.getAdditionalProperties().entrySet().stream().map(entry -> new Pair<String, String>(entry.getKey(), entry.getValue().toString())).collect(toList()));
+
+        return attributes;
     }
 
     @Override
