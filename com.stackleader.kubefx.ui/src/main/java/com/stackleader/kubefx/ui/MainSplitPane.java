@@ -5,12 +5,20 @@ import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Reference;
 import com.stackleader.kubefx.tabs.api.TabProvider;
 import com.stackleader.kubefx.ui.selections.SelectionInfo;
+import com.stackleader.kubefx.ui.tabs.PodInfoPane;
 import com.stackleader.kubefx.ui.tabs.TabPaneManager;
+import static com.stackleader.kubefx.ui.utils.FXUtilities.runAndWait;
+import java.io.IOException;
+import java.net.URL;
 import java.util.Optional;
 import javafx.application.Platform;
 import javafx.beans.value.ObservableValue;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.SplitPane;
+import javafx.scene.control.TabPane;
 import javafx.scene.layout.StackPane;
+import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,26 +27,35 @@ import org.slf4j.LoggerFactory;
  * @author dcnorris
  */
 @Component(immediate = true, provide = MainSplitPane.class)
-public class MainSplitPane extends SplitPane {
+public class MainSplitPane {
 
     private static final Logger LOG = LoggerFactory.getLogger(MainSplitPane.class);
     private TabPaneManager tabPaneManager;
+    @FXML
     private StackPane leftSide;
+    @FXML
     private StackPane rightSide;
     private SelectionInfo selectionInfo;
+    private SplitPane root;
 
     public MainSplitPane() {
-        leftSide = new StackPane();
-        rightSide = new StackPane();
-        getItems().add(leftSide);
-        getItems().add(rightSide);
-        setDividerPositions(0.35);
+        final URL resource = PodInfoPane.class.getClassLoader().getResource("MainSplitPane.fxml");
+        FXMLLoader fxmlLoader = new FXMLLoader(resource);
+        fxmlLoader.setClassLoader(this.getClass().getClassLoader());
+        fxmlLoader.setController(this);
+        runAndWait(() -> {
+            try {
+                root = fxmlLoader.load();
+            } catch (IOException exception) {
+                throw new RuntimeException(exception);
+            }
+        });
     }
 
     @Activate
-    public void activate() {
-        leftSide.getChildren().add(tabPaneManager.getLeftTabPane());
-//        rightSide.getChildren().add(tabPaneManager.getRightTabPane());
+    public void activate(BundleContext bundleContext) {
+        final TabPane leftTabPane = tabPaneManager.getLeftTabPane();
+        leftSide.getChildren().add(leftTabPane);
         addRightSidePaneListener();
     }
 
@@ -75,6 +92,10 @@ public class MainSplitPane extends SplitPane {
                 rightSide.getChildren().add(selectedTabProvider.getInfoPane());
             });
         });
+    }
+
+    public SplitPane getRoot() {
+        return root;
     }
 
 }

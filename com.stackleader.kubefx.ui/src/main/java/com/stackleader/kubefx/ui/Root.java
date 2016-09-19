@@ -8,8 +8,9 @@ import com.stackleader.kubefx.ui.footer.LogoBanner;
 import java.awt.DisplayMode;
 import java.awt.GraphicsEnvironment;
 import javafx.application.Platform;
+import javafx.scene.control.SplitPane;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 /**
@@ -20,7 +21,7 @@ import javafx.scene.layout.VBox;
 public class Root extends VBox {
 
     private MainSplitPane mainSplitPane;
-    private StackPane stackPane;
+    private AnchorPane anchorPane;
     private Footer footer;
     private LogoBanner logoBanner;
 
@@ -30,18 +31,24 @@ public class Root extends VBox {
         double width = displayMode.getWidth() * .8;
         double height = displayMode.getHeight() * .8;
         setPrefSize(width, height);
-        stackPane = new StackPane();
-        VBox.setVgrow(stackPane, Priority.ALWAYS);
+        anchorPane = new AnchorPane();
+        anchorPane.getStyleClass().add("theme-presets");
+        VBox.setVgrow(anchorPane, Priority.ALWAYS);
     }
 
     @Activate
     public void activate() {
         Platform.runLater(() -> {
-            stackPane.getChildren().add(mainSplitPane);
+            final SplitPane splitPane = mainSplitPane.getRoot();
+            AnchorPane.setBottomAnchor(splitPane, 0d);
+            AnchorPane.setLeftAnchor(splitPane, 0d);
+            AnchorPane.setRightAnchor(splitPane, 0d);
+            AnchorPane.setTopAnchor(splitPane, 0d);
+            anchorPane.getChildren().add(splitPane);
 //            getChildren().add(menuBarManager.getMenuBar());
 //            getChildren().add(toolbarProvider.getTopToolbar());
             getChildren().add(logoBanner);
-            getChildren().add(stackPane);
+            getChildren().add(anchorPane);
             getChildren().add(footer);
         });
     }

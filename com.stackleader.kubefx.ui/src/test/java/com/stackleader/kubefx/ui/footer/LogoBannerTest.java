@@ -36,8 +36,8 @@ public class LogoBannerTest extends ApplicationTest {
                 .thenReturn(bundle);
         when(bundle.getEntry("logo.css"))
                 .thenReturn(LogoBanner.class.getClassLoader().getResource("logo.css"));
-        when(bundle.getEntry("stackLeaderLogo.png"))
-                .thenReturn(LogoBanner.class.getClassLoader().getResource("stackLeaderLogo.png"));
+        when(bundle.getEntry("kubeFxLogo.png"))
+                .thenReturn(LogoBanner.class.getClassLoader().getResource("kubeFxLogo.png"));
     }
 
     @Override
@@ -49,6 +49,7 @@ public class LogoBannerTest extends ApplicationTest {
         Scene scene = new Scene(borderPane, 800, 50);
         stage.setScene(scene);
         stage.show();
+        
     }
 
     @Test

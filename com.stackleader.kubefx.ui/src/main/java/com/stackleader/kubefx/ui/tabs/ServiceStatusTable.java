@@ -4,6 +4,7 @@ import javafx.collections.ObservableList;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.StackPane;
 
 /**
  *
@@ -13,6 +14,10 @@ public class ServiceStatusTable<S> extends TableView<S> {
 
     public ServiceStatusTable(ObservableList<S> items) {
         super(items);
+        setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        final StackPane placeHolder = new StackPane();
+        placeHolder.getStyleClass().add("base");
+        setPlaceholder(placeHolder);
         initializeTable();
     }
 
@@ -29,10 +34,10 @@ public class ServiceStatusTable<S> extends TableView<S> {
         portsColumn.setCellValueFactory(new PropertyValueFactory<S, String>("ports"));
         ageColumn.setCellValueFactory(new PropertyValueFactory<S, String>("age"));
 
-        nameColumn.prefWidthProperty().bind(widthProperty().multiply(.25));
+        nameColumn.prefWidthProperty().bind(widthProperty().multiply(.30));
         clusterIpColumn.prefWidthProperty().bind(widthProperty().multiply(.20));
         externalIpColumn.prefWidthProperty().bind(widthProperty().multiply(.20));
-        portsColumn.prefWidthProperty().bind(widthProperty().multiply(.15));
+        portsColumn.prefWidthProperty().bind(widthProperty().multiply(.20));
         ageColumn.prefWidthProperty().bind(widthProperty().multiply(.10));
 
         getColumns().setAll(nameColumn, clusterIpColumn, externalIpColumn, portsColumn, ageColumn);

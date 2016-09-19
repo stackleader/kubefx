@@ -3,8 +3,8 @@ package com.stackleader.kubefx.ui;
 import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Reference;
-import com.stackleader.kubefx.kubernetes.api.KubernetesClient;
 import com.stackleader.kubefx.kubernetes.api.KubeConfigUtils;
+import com.stackleader.kubefx.kubernetes.api.KubernetesClient;
 import com.stackleader.kubefx.preferences.PreferenceUtils;
 import java.io.File;
 import java.io.IOException;
@@ -163,9 +163,11 @@ public class ConfigurationModal extends StackPane {
                 properties.put("masterUrl", masterUrl);
                 properties.put("username", username);
                 properties.put("password", password);
-                properties.put("certificateAuthorityData", certificateAuthorityData);
-                properties.put("clientCertData", clientCertData);
-                properties.put("clientKeyData", clientKeyData);
+                if (certificateAuthorityData != null && clientCertData != null && clientKeyData != null) {
+                    properties.put("certificateAuthorityData", certificateAuthorityData);
+                    properties.put("clientCertData", clientCertData);
+                    properties.put("clientKeyData", clientKeyData);
+                }
                 configuration.update(properties);
             }
         } catch (IOException ex) {

@@ -5,8 +5,8 @@
     <artifactId>com.stackleader.kubefx.preferences</artifactId>
     <packaging>bundle</packaging>
     <parent>
-        <groupId>org.lorainelab</groupId>
-        <artifactId>org.lorainelab.igb</artifactId>
+        <groupId>com.stackleader</groupId>
+        <artifactId>com.stackleader.kubefx</artifactId>
         <version>0.0.1</version>  
         <relativePath>../pom.xml</relativePath>
     </parent>

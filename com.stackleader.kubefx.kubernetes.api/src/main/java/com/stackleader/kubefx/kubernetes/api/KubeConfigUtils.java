@@ -64,12 +64,16 @@ public class KubeConfigUtils {
                         String password = user.getUser().getPassword();
                         String clientCertData = user.getUser().getClientCertificateData();
                         String clientKeyData = user.getUser().getClientKeyData();
-                        kubeClientConfigPrefNode.put("masterUrl", masterUrl);
-                        kubeClientConfigPrefNode.put("username", username);
-                        kubeClientConfigPrefNode.put("password", password);
-                        kubeClientConfigPrefNode.put("certificateAuthorityData", certificateAuthorityData);
-                        kubeClientConfigPrefNode.put("clientCertData", clientCertData);
-                        kubeClientConfigPrefNode.put("clientKeyData", clientKeyData);
+                        if (masterUrl != null && username != null && password != null) {
+                            kubeClientConfigPrefNode.put("masterUrl", masterUrl);
+                            kubeClientConfigPrefNode.put("username", username);
+                            kubeClientConfigPrefNode.put("password", password);
+                        }
+                        if (certificateAuthorityData != null && clientCertData != null && clientKeyData != null) {
+                            kubeClientConfigPrefNode.put("certificateAuthorityData", certificateAuthorityData);
+                            kubeClientConfigPrefNode.put("clientCertData", clientCertData);
+                            kubeClientConfigPrefNode.put("clientKeyData", clientKeyData);
+                        }
                         kubeClientConfigPrefNode.flush();
                     }
                 }

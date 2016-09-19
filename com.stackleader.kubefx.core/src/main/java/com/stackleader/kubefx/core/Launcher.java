@@ -9,7 +9,17 @@ import javafx.application.Application;
 import static javafx.application.Application.launch;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
+import javafx.scene.Scene;
+import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -23,6 +33,7 @@ public class Launcher extends Application {
 
     private static final Logger LOG = LoggerFactory.getLogger(Launcher.class);
     private StageProviderRegistrationManager stageRegistrationManager;
+    private Stage splashStage;
 
     @Activate
     public void activate() {
@@ -58,18 +69,40 @@ public class Launcher extends Application {
     private void handleRestartEvent() {
         Platform.runLater(() -> {
             Stage newStage = new Stage();
+            Stage newSplashStage = new Stage();
             newStage.setOnCloseRequest(onClose);
-            stageRegistrationManager.registerStageProvider(newStage, getHostServices());
+            stageRegistrationManager.registerStageProvider(newStage,newSplashStage, getHostServices());
         });
     }
 
-    @Override
+  @Override
     public void start(Stage primaryStage) throws Exception {
         final BundleContext bundleContext = FrameworkUtil.getBundle(this.getClass()).getBundleContext();
         ServiceReference<StageProviderRegistrationManager> serviceReference = bundleContext.getServiceReference(StageProviderRegistrationManager.class);
         StageProviderRegistrationManager stageRegistrationManager = bundleContext.getService(serviceReference);
-        stageRegistrationManager.registerStageProvider(primaryStage, getHostServices());
+        initSplashScreen();
+        stageRegistrationManager.registerStageProvider(primaryStage, splashStage, getHostServices());
         primaryStage.setOnCloseRequest(onClose);
+    }
+
+    public void initSplashScreen() {
+        splashStage = new Stage(StageStyle.TRANSPARENT);
+        splashStage.setAlwaysOnTop(true);
+        ProgressBar bar = new ProgressBar();
+        bar.setPadding(new Insets(0, 0, 10, 20));
+        BorderPane p = new BorderPane();
+        bar.prefWidthProperty().bind(p.widthProperty().subtract(20));
+        BorderPane center = new BorderPane();
+        Label label = new Label("Starting KubeFx");
+        label.setPadding(new Insets(0, 0, 0, 20));
+        label.setTextFill(Color.web("#B2A571"));
+        VBox vbox = new VBox(label, bar);
+        center.setCenter(vbox);
+        p.setBottom(center);
+        BundleContext bc = FrameworkUtil.getBundle(Launcher.class).getBundleContext();
+        StackPane stack = new StackPane(new ImageView(bc.getBundle().getEntry("splash-darker.png").toExternalForm()), p);
+        splashStage.setScene(new Scene(stack, 550, 250));
+        splashStage.show();
     }
 
     @Reference

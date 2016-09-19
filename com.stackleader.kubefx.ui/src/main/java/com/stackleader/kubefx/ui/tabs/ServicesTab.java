@@ -29,14 +29,14 @@ public class ServicesTab extends Tab implements TabProvider {
     private ObservableList<Service> nodes;
     private StackPane tabContent;
     private SelectionInfo selectionInfo;
-    private ServiceStatusTable<Service> nodesTable;
+    private ServiceStatusTable<Service> servicesTable;
 
     public ServicesTab() {
         setText("Services");
         nodes = FXCollections.observableArrayList();
-        nodesTable = new ServiceStatusTable<>(nodes);
-        nodesTable.setItems(nodes);
-        tabContent = new StackPane(nodesTable);
+        servicesTable = new ServiceStatusTable<>(nodes);
+        servicesTable.setItems(nodes);
+        tabContent = new StackPane(servicesTable);
         setContent(tabContent);
     }
 
@@ -77,7 +77,7 @@ public class ServicesTab extends Tab implements TabProvider {
     }
 
     private void initializeSelectionListeners() {
-        nodesTable.getSelectionModel().selectedItemProperty().addListener((ObservableValue<? extends Service> observable, Service oldValue, Service newValue) -> {
+        servicesTable.getSelectionModel().selectedItemProperty().addListener((ObservableValue<? extends Service> observable, Service oldValue, Service newValue) -> {
             selectionInfo.getSelectedService().setValue(Optional.ofNullable(newValue));
         });
     }

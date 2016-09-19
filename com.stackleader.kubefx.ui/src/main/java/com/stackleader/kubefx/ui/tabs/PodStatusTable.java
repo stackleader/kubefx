@@ -4,6 +4,7 @@ import javafx.collections.ObservableList;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.StackPane;
 
 /**
  *
@@ -13,6 +14,10 @@ public class PodStatusTable<S> extends TableView<S> {
 
     public PodStatusTable(ObservableList<S> items) {
         super(items);
+        setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        final StackPane placeHolder = new StackPane();
+        placeHolder.getStyleClass().add("base");
+        setPlaceholder(placeHolder);
         initializeTable();
     }
 

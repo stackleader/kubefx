@@ -38,6 +38,7 @@ public class PodsTab extends Tab implements TabProvider {
         podTable = new PodStatusTable<>(pods);
         podTable.setItems(pods);
         tabContent = new StackPane(podTable);
+        
         setContent(tabContent);
     }
 

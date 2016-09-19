@@ -27,6 +27,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.StackPane;
 import javafx.util.Callback;
@@ -49,9 +52,7 @@ public class PodInfoPane extends StackPane {
     private KubernetesClient client;
     private SelectionInfo selectionInfo;
     @FXML
-    private Button startTail;
-    @FXML
-    private Button stopTail;
+    private ToggleButton tailToggleBtn;
     @FXML
     private Button copyBtn;
     @FXML
@@ -59,7 +60,9 @@ public class PodInfoPane extends StackPane {
     @FXML
     private TextArea logsTextArea;
     @FXML
-    private AnchorPane infoAnchorPane;
+    private AnchorPane attributeTablePane;
+    @FXML
+    private AnchorPane metricPane;
     final TableView<Pair<String, String>> infoTable;
     private Pod selectedPod;
     private Call logRequestCall;
@@ -69,12 +72,15 @@ public class PodInfoPane extends StackPane {
 
     public PodInfoPane() {
         infoTable = new TableView<>();
+        final StackPane placeHolder = new StackPane();
+        placeHolder.getStyleClass().add("base");
+        infoTable.setPlaceholder(placeHolder);
         updateStream = new EventSource<>();
         logContent = new LinkedBlockingDeque<>(10_000);
 
         data = FXCollections.observableArrayList();
         infoTable.setItems(data);
-         // table definition
+        // table definition
         TableColumn<Pair<String, String>, String> nameColumn = new TableColumn<>("NAME");
         TableColumn<Pair<String, String>, String> valueColumn = new TableColumn<>("VALUE");
         valueColumn.setSortable(false);
@@ -85,10 +91,10 @@ public class PodInfoPane extends StackPane {
                 return new ReadOnlyStringWrapper(param.getValue().getKey());
             }
         });
-       valueColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<Pair<String, String>, String>, ObservableValue<String>>() {
+        valueColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<Pair<String, String>, String>, ObservableValue<String>>() {
             @Override
             public ObservableValue<String> call(TableColumn.CellDataFeatures<Pair<String, String>, String> param) {
-                  return new ReadOnlyStringWrapper(param.getValue().getValue());
+                return new ReadOnlyStringWrapper(param.getValue().getValue());
             }
         });
 
@@ -105,7 +111,7 @@ public class PodInfoPane extends StackPane {
                 AnchorPane.setLeftAnchor(infoTable, 0d);
                 AnchorPane.setRightAnchor(infoTable, 0d);
                 AnchorPane.setTopAnchor(infoTable, 0d);
-                infoAnchorPane.getChildren().add(infoTable);
+                attributeTablePane.getChildren().add(infoTable);
 
                 AnchorPane.setBottomAnchor(root, 0d);
                 AnchorPane.setLeftAnchor(root, 0d);
@@ -124,7 +130,7 @@ public class PodInfoPane extends StackPane {
         Platform.runLater(() -> {
             infoTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
             logsTextArea.setEditable(false);
-            logsTextArea.getStylesheets().add(bc.getBundle().getEntry("consoleStyle.css").toExternalForm());
+            logsTextArea.setWrapText(true);
         });
         updateStream.successionEnds(Duration.ofMillis(500)).subscribe(e -> {
             final ArrayList<String> logLines = new ArrayList<String>();
@@ -141,37 +147,58 @@ public class PodInfoPane extends StackPane {
                     logsTextArea.clear();
                     this.selectedPod = selectedPod;
                     data.clear();
+                    tailToggleBtn.setSelected(false);
                     data.addAll(selectedPod.getAttributes());
                 });
             });
         });
-        startTail.setOnAction(event -> {
-            if (selectedPod != null) {
-                logContent.add("Starting Tail");
-                updateStream.emit(null);
-                logRequestCall = client.tailLogs(selectedPod);
-                CompletableFuture.runAsync(() -> {
-                    try (Response response = logRequestCall.execute();
-                            InputStream is = response.body().byteStream()) {
-                        byte[] bytes = new byte[1000];
-                        while (!logRequestCall.isCanceled() && is.read(bytes) > -1) {
-                            if (logContent.remainingCapacity() > 0) {
-                                logContent.add(new String(bytes));
+        tailToggleBtn.selectedProperty().addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean isSelected) -> {
+            Platform.runLater(() -> {
+                if (isSelected) {
+                    tailToggleBtn.getStyleClass().add("armed");
+                    if (selectedPod != null) {
+                        tailToggleBtn.setText("Tailing Logs...");
+                        tailToggleBtn.arm();
+                        logContent.add("Starting Tail\n");
+                        updateStream.emit(null);
+                        logRequestCall = client.tailLogs(selectedPod);
+                        CompletableFuture.runAsync(() -> {
+                            try (Response response = logRequestCall.execute();
+                                    InputStream is = response.body().byteStream()) {
+                                byte[] bytes = new byte[1000];
+                                while (!logRequestCall.isCanceled() && is.read(bytes) > -1) {
+                                    if (logContent.remainingCapacity() > 0) {
+                                        logContent.add(new String(bytes));
+                                    }
+                                    updateStream.emit(null);
+                                }
+                            } catch (IOException ex) {
+                                if (!logRequestCall.isCanceled()) {
+                                    LOG.error(ex.getMessage(), ex);
+                                }
                             }
-                            updateStream.emit(null);
-                        }
-                    } catch (IOException ex) {
-                        if (!logRequestCall.isCanceled()) {
-                            LOG.error(ex.getMessage(), ex);
-                        }
+                        });
                     }
-                });
-            }
+                } else {
+                    tailToggleBtn.getStyleClass().remove("armed");
+                    tailToggleBtn.setText("Tail Logs");
+                    if (logRequestCall != null) {
+                        logRequestCall.cancel();
+                    }
+
+                }
+            });
         });
-        stopTail.setOnAction(event -> {
-            if (logRequestCall != null) {
-                logRequestCall.cancel();
-            }
+        clearBtn.setOnAction(evt -> {
+            Platform.runLater(() -> {
+                logsTextArea.clear();
+            });
+        });
+        copyBtn.setOnAction(action -> {
+            final Clipboard clipboard = Clipboard.getSystemClipboard();
+            final ClipboardContent content = new ClipboardContent();
+            content.putString(logsTextArea.getText());
+            clipboard.setContent(content);
         });
     }
 

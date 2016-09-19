@@ -17,14 +17,15 @@ import javafx.util.Duration;
  * @author dcnorris
  */
 public class MemoryTracker extends StackPane {
-    
+
     private static final int FIXED_WIDTH = 250;
     private static final double FIXED_HEIGHT = 20.0;
     private ProgressBar memoryProgressBar;
     private Label memoryLabel;
     private FontAwesomeIconView trashIcon;
-    
+
     public MemoryTracker() {
+        getStyleClass().add("base");
         memoryLabel = new Label();
         memoryProgressBar = new ProgressBar();
         trashIcon = new FontAwesomeIconView(FontAwesomeIcon.TRASH);
@@ -33,7 +34,7 @@ public class MemoryTracker extends StackPane {
         startTrackingMemory();
         trashIcon.setOnMouseClicked(click -> System.gc());
     }
-    
+
     private void initLayout() {
         setMaxHeight(FIXED_HEIGHT);
         setPrefHeight(FIXED_HEIGHT);
@@ -48,7 +49,7 @@ public class MemoryTracker extends StackPane {
         StackPane.setMargin(trashIcon, new Insets(0, 7, 0, 0));
         setPadding(new Insets(5, 0, 0, 5));
     }
-    
+
     private void startTrackingMemory() {
         Timeline memoryInfoTimeline = new Timeline(new KeyFrame(Duration.seconds(2), (event) -> {
             final int freeMemory = (int) (Runtime.getRuntime().freeMemory() / (1024 * 1024));
@@ -69,5 +70,5 @@ public class MemoryTracker extends StackPane {
         memoryInfoTimeline.setCycleCount(Timeline.INDEFINITE);
         memoryInfoTimeline.play();
     }
-    
+
 }

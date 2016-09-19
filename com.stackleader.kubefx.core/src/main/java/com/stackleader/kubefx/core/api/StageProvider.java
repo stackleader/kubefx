@@ -16,5 +16,7 @@ public interface StageProvider {
 
     Stage getStage();
 
+    Stage getSplashStage();
+
     HostServices getHostServices();
 }
