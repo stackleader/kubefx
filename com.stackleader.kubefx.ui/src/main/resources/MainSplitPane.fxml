@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.layout.StackPane?>
+
+<SplitPane dividerPositions="0.35" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.65" xmlns:fx="http://javafx.com/fxml/1">
+   <items>
+      <StackPane fx:id="leftSide" prefHeight="200.0" prefWidth="200.0" style="-fx-background-color: #252526;" />
+      <StackPane fx:id="rightSide" prefHeight="200.0" prefWidth="200.0" style="-fx-background-color: #333333;" />
+   </items>
+</SplitPane>
