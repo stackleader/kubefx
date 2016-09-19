@@ -1,3 +1,5 @@
+
+![KubeFx Screenshot](images/splash-darker.png)
 KubeFx
 ======
 
