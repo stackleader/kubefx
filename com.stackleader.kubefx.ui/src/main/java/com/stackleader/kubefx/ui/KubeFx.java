@@ -1,5 +1,6 @@
 package com.stackleader.kubefx.ui;
 
+import com.stackleader.kubefx.ui.auth.ConfigurationModal;
 import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Deactivate;
@@ -50,7 +51,7 @@ public class KubeFx {
         if (showConfigScreen) {
             Platform.runLater(() -> {
                 Scene scene = new Scene(configurationModal);
-                stage.setTitle("KubeFx Configuration");
+                stage.setTitle("Manage Credentials");
                 stage.setScene(scene);
                 stage.sizeToScene();
                 stage.show();

@@ -6,10 +6,12 @@
     <groupId>com.stackleader</groupId>
     <artifactId>com.stackleader.kubefx.feature</artifactId>
     <packaging>pom</packaging>
+    
     <parent>
         <groupId>com.stackleader</groupId>
         <artifactId>com.stackleader.kubefx</artifactId>
         <version>0.0.1</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <build>

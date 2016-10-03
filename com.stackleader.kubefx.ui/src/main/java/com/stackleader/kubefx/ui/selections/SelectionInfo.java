@@ -9,6 +9,7 @@ import com.stackleader.kubefx.kubernetes.api.model.Node;
 import com.stackleader.kubefx.kubernetes.api.model.Pod;
 import com.stackleader.kubefx.kubernetes.api.model.Service;
 import com.stackleader.kubefx.tabs.api.TabProvider;
+import com.stackleader.kubefx.ui.auth.BasicAuthCredential;
 import java.util.Optional;
 import javafx.beans.property.ObjectProperty;
 
@@ -18,6 +19,7 @@ import javafx.beans.property.ObjectProperty;
  */
 public interface SelectionInfo {
 
+    ObjectProperty<Optional<BasicAuthCredential>> getSelectedCredential();
     ObjectProperty<Optional<Pod>> getSelectedPod();
     ObjectProperty<Optional<Node>> getSelectedNode();
     ObjectProperty<Optional<Service>> getSelectedService();

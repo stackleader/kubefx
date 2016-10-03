@@ -8,9 +8,9 @@ import com.stackleader.kubefx.kubernetes.api.model.Service;
 import com.stackleader.kubefx.tabs.api.TabDockingPosition;
 import com.stackleader.kubefx.tabs.api.TabProvider;
 import com.stackleader.kubefx.ui.selections.SelectionInfo;
+import static com.stackleader.kubefx.ui.utils.FXUtilities.runAndWait;
 import java.util.List;
 import java.util.Optional;
-import javafx.application.Platform;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -23,7 +23,7 @@ import javafx.scene.layout.StackPane;
  * @author dcnorris
  */
 @Component(immediate = true)
-public class ServicesTab extends Tab implements TabProvider {
+public class ServicesTab extends Tab implements TabProvider, RefreshActionListener {
 
     private KubernetesClient client;
     private ObservableList<Service> nodes;
@@ -42,12 +42,7 @@ public class ServicesTab extends Tab implements TabProvider {
 
     @Activate
     public void activate() {
-        List<Service> clientPods = client.getServices();
-        clientPods.forEach(pod -> {
-            Platform.runLater(() -> {
-                nodes.add(pod);
-            });
-        });
+        refresh();
         initializeSelectionListeners();
     }
 
@@ -63,7 +58,7 @@ public class ServicesTab extends Tab implements TabProvider {
 
     @Override
     public int getTabWeight() {
-          return 2;
+        return 2;
     }
 
     @Reference
@@ -85,6 +80,17 @@ public class ServicesTab extends Tab implements TabProvider {
     @Override
     public Pane getInfoPane() {
         return new Pane();
+    }
+
+    @Override
+    public void refresh() {
+        runAndWait(() -> {
+            nodes.clear();
+            List<Service> services = client.getServices();
+            services.forEach(pod -> {
+                nodes.add(pod);
+            });
+        });
     }
 
 }

@@ -10,6 +10,7 @@
         <bundle>mvn:com.google.guava/guava/19.0</bundle>
         
         <bundle>mvn:javax.validation/validation-api/1.1.0.Final</bundle>
+        <bundle>mvn:org.hibernate/hibernate-validator/4.2.0.Final</bundle>
         <bundle>mvn:com.fasterxml.jackson.core/jackson-core/2.7.5</bundle>
         <bundle>mvn:com.fasterxml.jackson.core/jackson-annotations/2.7.0</bundle>
         <bundle>mvn:com.fasterxml.jackson.core/jackson-databind/2.7.5</bundle>
@@ -22,6 +23,7 @@
         
         <bundle>mvn:org.controlsfx/controlsfx/8.40.11</bundle>
         <bundle>mvn:${project.groupId}/com.stackleader.kubefx.preferences/${project.version}</bundle>
+        <bundle>mvn:${project.groupId}/com.stackleader.kubefx.config.api/${project.version}</bundle>
         <bundle>mvn:${project.groupId}/com.stackleader.kubefx.core/${project.version}</bundle>
         <bundle>mvn:${project.groupId}/com.stackleader.kubefx.kubernetes.api/${project.version}</bundle>
         <bundle>mvn:${project.groupId}/com.stackleader.kubefx.ui/${project.version}</bundle>

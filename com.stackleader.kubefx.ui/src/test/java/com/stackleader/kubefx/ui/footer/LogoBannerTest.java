@@ -5,6 +5,7 @@
  */
 package com.stackleader.kubefx.ui.footer;
 
+import com.stackleader.kubefx.ui.toolbar.LogoBanner;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;

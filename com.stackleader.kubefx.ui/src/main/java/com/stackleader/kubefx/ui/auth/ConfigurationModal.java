@@ -1,4 +1,4 @@
-package com.stackleader.kubefx.ui;
+package com.stackleader.kubefx.ui.auth;
 
 import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;

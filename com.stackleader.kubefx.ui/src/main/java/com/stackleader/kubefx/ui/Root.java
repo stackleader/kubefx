@@ -1,10 +1,10 @@
 package com.stackleader.kubefx.ui;
 
+import com.stackleader.kubefx.ui.toolbar.LogoBanner;
 import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Reference;
 import com.stackleader.kubefx.ui.footer.Footer;
-import com.stackleader.kubefx.ui.footer.LogoBanner;
 import java.awt.DisplayMode;
 import java.awt.GraphicsEnvironment;
 import javafx.application.Platform;

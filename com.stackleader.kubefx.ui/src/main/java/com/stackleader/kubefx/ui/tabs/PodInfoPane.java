@@ -97,7 +97,6 @@ public class PodInfoPane extends StackPane {
                 return new ReadOnlyStringWrapper(param.getValue().getValue());
             }
         });
-
         infoTable.getColumns().setAll(nameColumn, valueColumn);
         final URL resource = PodInfoPane.class.getClassLoader().getResource("podInfo.fxml");
         FXMLLoader fxmlLoader = new FXMLLoader(resource);

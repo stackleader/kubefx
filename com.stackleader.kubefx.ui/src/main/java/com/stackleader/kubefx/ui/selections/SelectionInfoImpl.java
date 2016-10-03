@@ -5,6 +5,7 @@ import com.stackleader.kubefx.kubernetes.api.model.Node;
 import com.stackleader.kubefx.kubernetes.api.model.Pod;
 import com.stackleader.kubefx.kubernetes.api.model.Service;
 import com.stackleader.kubefx.tabs.api.TabProvider;
+import com.stackleader.kubefx.ui.auth.BasicAuthCredential;
 import java.util.Optional;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -20,12 +21,14 @@ public class SelectionInfoImpl implements SelectionInfo {
     private ObjectProperty<Optional<Node>> selectedNode;
     private ObjectProperty<Optional<Service>> selectedService;
     private ObjectProperty<Optional<TabProvider>> selectedTabProvider;
+    private ObjectProperty<Optional<BasicAuthCredential>> selectedCredential;
 
     public SelectionInfoImpl() {
         selectedPod = new SimpleObjectProperty<>(Optional.empty());
         selectedNode = new SimpleObjectProperty<>(Optional.empty());
         selectedService = new SimpleObjectProperty<>(Optional.empty());
         selectedTabProvider = new SimpleObjectProperty<>(Optional.empty());
+        selectedCredential = new SimpleObjectProperty<>(Optional.empty());
     }
 
     @Override
@@ -45,6 +48,11 @@ public class SelectionInfoImpl implements SelectionInfo {
 
     @Override
     public ObjectProperty<Optional<Service>> getSelectedService() {
-       return selectedService;
+        return selectedService;
+    }
+
+    @Override
+    public ObjectProperty<Optional<BasicAuthCredential>> getSelectedCredential() {
+        return selectedCredential;
     }
 }

@@ -53,7 +53,7 @@ public class KubernetesClientImpl implements KubernetesClient {
         }
     }
 
-    @Modified //TODO not sure why update isn't working with configuratino metatype 
+    @Modified //TODO not sure why update isn't working with configuration metatype 
     public void updated(Map<String, String> props) {
         try {
             initializeKubeClientConfig(props);

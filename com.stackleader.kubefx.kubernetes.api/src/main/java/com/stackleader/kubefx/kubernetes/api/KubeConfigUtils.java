@@ -18,6 +18,7 @@ package com.stackleader.kubefx.kubernetes.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import static com.google.common.base.Preconditions.checkNotNull;
+import com.stackleader.kubefx.kubernetes.api.model.ActiveConfig;
 import com.stackleader.kubefx.preferences.PreferenceUtils;
 import io.fabric8.kubernetes.api.model.Config;
 import io.fabric8.kubernetes.api.model.NamedAuthInfo;
@@ -39,9 +40,27 @@ public class KubeConfigUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(KubeConfigUtils.class);
 
-    static Config parseConfig(File file) throws IOException {
+    public static Optional<ActiveConfig> parseConfig(File file) throws IOException {
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-        return mapper.readValue(file, Config.class);
+        Config config = mapper.readValue(file, Config.class);
+        String currentContext = config.getCurrentContext();
+        final Optional<NamedCluster> currentCluster = config.getClusters().stream().filter(cluster -> cluster.getName().equals(currentContext)).findFirst();
+        if (currentCluster.isPresent()) {
+            String masterUrl = currentCluster.get().getCluster().getServer();
+            final List<NamedAuthInfo> configUsers = config.getUsers();
+            Optional<NamedAuthInfo> currentContextUser = configUsers.stream().filter(user -> user.getName().equals(config.getCurrentContext())).findFirst();
+            if (currentContextUser.isPresent()) {
+                NamedAuthInfo user = currentContextUser.get();
+                String name = user.getName();
+                String username = user.getUser().getUsername();
+                String password = user.getUser().getPassword();
+                if (name != null && masterUrl != null && username != null && password != null) {
+                    ActiveConfig activeConfig = new ActiveConfig(name, masterUrl, username, password);
+                    return Optional.ofNullable(activeConfig);
+                }
+            }
+        }
+        return Optional.empty();
     }
 
     public static void parseKubeConfigToPreferenceNode(File configFile) {
@@ -51,34 +70,40 @@ public class KubeConfigUtils {
             try {
                 ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
                 final Config parseConfig = mapper.readValue(configFile, Config.class);
-                String currentContext = parseConfig.getCurrentContext();
-                final Optional<NamedCluster> currentCluster = parseConfig.getClusters().stream().filter(cluster -> cluster.getName().equals(currentContext)).findFirst();
-                if (currentCluster.isPresent()) {
-                    String certificateAuthorityData = currentCluster.get().getCluster().getCertificateAuthorityData();
-                    String masterUrl = currentCluster.get().getCluster().getServer();
-                    final List<NamedAuthInfo> configUsers = parseConfig.getUsers();
-                    Optional<NamedAuthInfo> currentContextUser = configUsers.stream().filter(user -> user.getName().equals(parseConfig.getCurrentContext())).findFirst();
-                    if (currentContextUser.isPresent()) {
-                        NamedAuthInfo user = currentContextUser.get();
-                        String username = user.getUser().getUsername();
-                        String password = user.getUser().getPassword();
-                        String clientCertData = user.getUser().getClientCertificateData();
-                        String clientKeyData = user.getUser().getClientKeyData();
-                        if (masterUrl != null && username != null && password != null) {
-                            kubeClientConfigPrefNode.put("masterUrl", masterUrl);
-                            kubeClientConfigPrefNode.put("username", username);
-                            kubeClientConfigPrefNode.put("password", password);
-                        }
-                        if (certificateAuthorityData != null && clientCertData != null && clientKeyData != null) {
-                            kubeClientConfigPrefNode.put("certificateAuthorityData", certificateAuthorityData);
-                            kubeClientConfigPrefNode.put("clientCertData", clientCertData);
-                            kubeClientConfigPrefNode.put("clientKeyData", clientKeyData);
-                        }
-                        kubeClientConfigPrefNode.flush();
-                    }
-                }
+                initializeFromConfig(parseConfig, kubeClientConfigPrefNode);
             } catch (Exception ex) {
                 LOG.error(ex.getMessage(), ex);
+            }
+        }
+    }
+
+    private static void initializeFromConfig(final Config parseConfig, Preferences kubeClientConfigPrefNode) throws Exception {
+        String currentContext = parseConfig.getCurrentContext();
+        final Optional<NamedCluster> currentCluster = parseConfig.getClusters().stream().filter(cluster -> cluster.getName().equals(currentContext)).findFirst();
+        if (currentCluster.isPresent()) {
+            String certificateAuthorityData = currentCluster.get().getCluster().getCertificateAuthorityData();
+            String masterUrl = currentCluster.get().getCluster().getServer();
+            final List<NamedAuthInfo> configUsers = parseConfig.getUsers();
+            Optional<NamedAuthInfo> currentContextUser = configUsers.stream().filter(user -> user.getName().equals(parseConfig.getCurrentContext())).findFirst();
+            if (currentContextUser.isPresent()) {
+                NamedAuthInfo user = currentContextUser.get();
+                String name = user.getName();
+                String username = user.getUser().getUsername();
+                String password = user.getUser().getPassword();
+                String clientCertData = user.getUser().getClientCertificateData();
+                String clientKeyData = user.getUser().getClientKeyData();
+                if (name != null && masterUrl != null && username != null && password != null) {
+                    kubeClientConfigPrefNode.put("name", name);
+                    kubeClientConfigPrefNode.put("masterUrl", masterUrl);
+                    kubeClientConfigPrefNode.put("username", username);
+                    kubeClientConfigPrefNode.put("password", password);
+                }
+                if (certificateAuthorityData != null && clientCertData != null && clientKeyData != null) {
+                    kubeClientConfigPrefNode.put("certificateAuthorityData", certificateAuthorityData);
+                    kubeClientConfigPrefNode.put("clientCertData", clientCertData);
+                    kubeClientConfigPrefNode.put("clientKeyData", clientKeyData);
+                }
+                kubeClientConfigPrefNode.flush();
             }
         }
     }

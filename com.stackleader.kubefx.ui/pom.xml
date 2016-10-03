@@ -88,6 +88,14 @@
             <version>1.10.19</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-validator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.stackleader</groupId>
+            <artifactId>com.stackleader.kubefx.config.api</artifactId>
+        </dependency>
     </dependencies>
     
     <build>
