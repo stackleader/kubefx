@@ -3,9 +3,8 @@ package com.stackleader.kubefx.ui.actions;
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Reference;
 import com.google.common.collect.Sets;
-import com.stackleader.kubefx.ui.tabs.RefreshActionListener;
+import static com.stackleader.kubefx.ui.utils.FXUtilities.runAndWait;
 import java.util.Set;
-import javafx.application.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,20 +13,17 @@ import org.slf4j.LoggerFactory;
  * @author dcnorris
  */
 @Component(immediate = true, provide = {RefreshAction.class, KubeAction.class})
-public class RefreshAction implements KubeAction, Runnable {
+public class RefreshAction extends AbstractKubeAction implements KubeAction, Runnable {
 
     private static final Logger LOG = LoggerFactory.getLogger(RefreshAction.class);
     private static final String REFRESH = "refresh";
     private Set<RefreshActionListener> listeners;
 
     public RefreshAction() {
+        setText(REFRESH);
         listeners = Sets.newConcurrentHashSet();
     }
 
-    @Override
-    public String getActionName() {
-        return REFRESH;
-    }
 
     @Override
     public Runnable getAction() {
@@ -36,7 +32,7 @@ public class RefreshAction implements KubeAction, Runnable {
 
     @Override
     public void run() {
-        Platform.runLater(() -> {
+        runAndWait(() -> {
             for (RefreshActionListener listener : listeners) {
                 try {
                     listener.refresh();

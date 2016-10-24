@@ -9,24 +9,25 @@ import com.stackleader.kubefx.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.internal.SSLUtils;
-import java.security.GeneralSecurityException;
+import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import static java.util.stream.Collectors.toList;
-import javax.net.ssl.KeyManager;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
+import okhttp3.Authenticator;
 import okhttp3.Call;
 import okhttp3.Credentials;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.Route;
+import org.apache.http.conn.ssl.SSLContexts;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
@@ -41,8 +42,12 @@ import org.slf4j.LoggerFactory;
 public class KubernetesClientImpl implements KubernetesClient {
 
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(KubernetesClientImpl.class);
-    private io.fabric8.kubernetes.client.KubernetesClient client;
+    private ObjectProperty<io.fabric8.kubernetes.client.KubernetesClient> client;
     private Config config;
+
+    public KubernetesClientImpl() {
+        client = new SimpleObjectProperty<>();
+    }
 
     @Activate
     public void activate(Map<String, String> props) {
@@ -62,7 +67,7 @@ public class KubernetesClientImpl implements KubernetesClient {
         }
     }
 
-    private void initializeKubeClientConfig(Map<String, String> props) throws KubernetesClientException {
+    private void initializeKubeClientConfig(Map<String, String> props) throws Exception {
         checkNotNull(props, "configuration cannot be null");
         checkNotNull(props.get("masterUrl"), "masterUrl is required");
         checkNotNull(props.get("username"), "username is required");
@@ -87,73 +92,104 @@ public class KubernetesClientImpl implements KubernetesClient {
                     .withClientKeyData(clientKeyData)
                     .build();
         }
-        client = new DefaultKubernetesClient(config);
+        SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(null,
+                new TrustSelfSignedStrategy()).build();
+        httpClient = new OkHttpClient.Builder()
+                .authenticator(getBasicAuth(config.getUsername(), config.getPassword()))
+                .sslSocketFactory(sslContext.getSocketFactory())
+                .connectTimeout(3, TimeUnit.SECONDS)
+                .writeTimeout(5, TimeUnit.MINUTES)
+                .readTimeout(30, TimeUnit.MINUTES)
+                .build();
+        client.set(new DefaultKubernetesClient(httpClient, config));
+    }
+    private OkHttpClient httpClient;
+
+    private Authenticator getBasicAuth(final String username, final String password) {
+        return new Authenticator() {
+            private int mCounter = 0;
+
+            @Override
+            public Request authenticate(Route route, Response response) throws IOException {
+                if (mCounter++ > 3) {
+                    return null;
+                } else {
+                    String credential = Credentials.basic(username, password);
+                    return response.request().newBuilder().header("Authorization", credential).build();
+                }
+            }
+        };
     }
 
     @Override
     public List<Pod> getPods() {
-        if (client != null) {
-            return client.pods().list().getItems().stream().map(pod -> new Pod(pod)).collect(toList());
+        if (client.get() != null) {
+            try {
+                return client.get().pods().list().getItems().stream().map(pod -> new Pod(pod)).collect(toList());
+            } catch (Throwable t) {
+                logRemoteConnectionError(t);
+            }
         }
         return Collections.EMPTY_LIST;
     }
 
     @Override
     public List<Pod> getPods(String namespace) {
-        if (client != null) {
-            return client.pods().inNamespace(namespace).list().getItems().stream().map(pod -> new Pod(pod)).collect(toList());
+        if (client.get() != null) {
+            try {
+                return client.get().pods().inNamespace(namespace).list().getItems().stream().map(pod -> new Pod(pod)).collect(toList());
+            } catch (Throwable t) {
+                logRemoteConnectionError(t);
+            }
         }
         return Collections.EMPTY_LIST;
     }
 
+    private void logRemoteConnectionError(Throwable t) {
+        if (t.getCause() instanceof UnknownHostException) {
+            LOG.warn("UnknownHostException, check url or internet connection");
+        } else {
+            LOG.warn("could not fetch resource, connection error", t);
+        }
+    }
+
     @Override
     public List<Node> getNodes() {
-        if (client != null) {
-            return client.nodes().list().getItems().stream().map(node -> new Node(node)).collect(toList());
+        if (client.get() != null) {
+            try {
+                return client.get().nodes().list().getItems().stream().map(node -> new Node(node)).collect(toList());
+            } catch (Throwable t) {
+                logRemoteConnectionError(t);
+            }
         }
         return Collections.EMPTY_LIST;
     }
 
     @Override
     public List<Service> getServices() {
-        if (client != null) {
-            return client.services().list().getItems().stream().map(service -> new Service(service)).collect(toList());
+        if (client.get() != null) {
+            try {
+                final List<Service> services = client.get().services().list().getItems().stream().map(service -> new Service(service)).collect(toList());
+                return services;
+            } catch (Throwable t) {
+                logRemoteConnectionError(t);
+            }
         }
         return Collections.EMPTY_LIST;
     }
 
     @Override
     public Call tailLogs(Pod pod) {
-
         try {
-            TrustManager[] trustManagers = SSLUtils.trustManagers(config);
-            KeyManager[] keyManagers = SSLUtils.keyManagers(config);
-            if (keyManagers != null || trustManagers != null || config.isTrustCerts()) {
-                try {
-                    SSLContext sslContext = SSLUtils.sslContext(keyManagers, trustManagers, config.isTrustCerts());
+            final String selectedNamespace = "default";
 
-                    String credential = Credentials.basic(config.getUsername(), config.getPassword());
-                    OkHttpClient client = new OkHttpClient.Builder()
-                            .authenticator((Route route, Response rspns) -> rspns.request().newBuilder().addHeader("Authorization", credential).build())
-                            .sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) trustManagers[0])
-                            .connectTimeout(10, TimeUnit.SECONDS)
-                            .writeTimeout(30, TimeUnit.MINUTES)
-                            .readTimeout(30, TimeUnit.MINUTES)
-                            .build();
-                    final String selectedNamespace = "default";
+            final String kube = config.getMasterUrl() + "api/" + config.getApiVersion() + "/namespaces/" + selectedNamespace + "/pods/" + pod.getName() + "/log?follow=true";
+            Request request = new Request.Builder()
+                    .url(kube)
+                    .build();
+            final Call newCall = httpClient.newCall(request);
 
-                    final String kube = config.getMasterUrl() + "api/" + config.getApiVersion() + "/namespaces/" + selectedNamespace + "/pods/" + pod.getName() + "/log?follow=true";
-                    Request request = new Request.Builder()
-                            .url(kube)
-                            .build();
-                    final Call newCall = client.newCall(request);
-
-                    return newCall;
-                } catch (GeneralSecurityException e) {
-                    throw new AssertionError(); // The system has no TLS. Just give up.
-                }
-
-            }
+            return newCall;
         } catch (Exception ex) {
             LOG.error(ex.getMessage(), ex);
         }

@@ -17,6 +17,7 @@ import javafx.collections.ObservableList;
 import javafx.scene.control.Tab;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import com.stackleader.kubefx.ui.actions.RefreshActionListener;
 
 /**
  *

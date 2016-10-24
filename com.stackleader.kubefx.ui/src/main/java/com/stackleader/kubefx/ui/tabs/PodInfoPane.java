@@ -69,7 +69,8 @@ public class PodInfoPane extends StackPane {
     private final BlockingDeque<String> logContent;
     private EventSource<Void> updateStream;
     public ObservableList<Pair<String, String>> data;
-
+    //https://104.196.24.121/api/v1/proxy/namespaces/kube-system/services/heapster/api/v1/metric-export
+    //https://104.196.24.121/api/v1/proxy/namespaces/kube-system/services/heapster/api/v1/model/namespaces/default/pods/nginx-proxy-v1.0.19-k3ib6/metrics/uptime
     public PodInfoPane() {
         infoTable = new TableView<>();
         final StackPane placeHolder = new StackPane();

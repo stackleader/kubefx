@@ -1,6 +1,8 @@
 package com.stackleader.kubefx.ui.auth;
 
+import java.util.Objects;
 import javax.validation.constraints.NotNull;
+import org.hibernate.validator.constraints.URL;
 
 /**
  *
@@ -14,6 +16,7 @@ public class BasicAuthCredential {
     private String username;
     @NotNull
     private String password;
+    @URL
     @NotNull
     private String masterUrl;
 
@@ -54,6 +57,31 @@ public class BasicAuthCredential {
 
     public void setMasterUrl(String masterUrl) {
         this.masterUrl = masterUrl;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 67 * hash + Objects.hashCode(this.name);
+        hash = 67 * hash + Objects.hashCode(this.username);
+        hash = 67 * hash + Objects.hashCode(this.password);
+        hash = 67 * hash + Objects.hashCode(this.masterUrl);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final BasicAuthCredential other = (BasicAuthCredential) obj;
+        return true;
     }
 
 }
