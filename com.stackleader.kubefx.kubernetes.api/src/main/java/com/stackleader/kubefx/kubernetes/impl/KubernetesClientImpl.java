@@ -22,6 +22,7 @@ import javax.net.ssl.SSLContext;
 import okhttp3.Authenticator;
 import okhttp3.Call;
 import okhttp3.Credentials;
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -107,16 +108,26 @@ public class KubernetesClientImpl implements KubernetesClient {
 
     private Authenticator getBasicAuth(final String username, final String password) {
         return new Authenticator() {
-            private int mCounter = 0;
+            private int counter = 0;
+            private HttpUrl previous = null;
+            private String previousCred = null;
 
             @Override
             public Request authenticate(Route route, Response response) throws IOException {
-                if (mCounter++ > 3) {
-                    return null;
-                } else {
-                    String credential = Credentials.basic(username, password);
-                    return response.request().newBuilder().header("Authorization", credential).build();
+
+                String credential = Credentials.basic(username, password);
+                //try to detect if in auth fail loop
+                if (counter > 3) {
+                    if (previous.equals(route) && previousCred.equals(credential)) {
+                        previous = response.request().url();
+                        previousCred = credential;
+                        counter++;
+                        return null;
+                    }
                 }
+                previous = response.request().url();
+                previousCred = credential;
+                return response.request().newBuilder().header("Authorization", credential).build();
             }
         };
     }
