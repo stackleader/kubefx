@@ -5,7 +5,7 @@ import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Reference;
 import com.stackleader.kubefx.tabs.api.TabProvider;
 import com.stackleader.kubefx.ui.selections.SelectionInfo;
-import com.stackleader.kubefx.ui.tabs.PodInfoPane;
+import com.stackleader.kubefx.ui.tabs.PodDetailsPane;
 import com.stackleader.kubefx.ui.tabs.TabPaneManager;
 import static com.stackleader.kubefx.ui.utils.FXUtilities.runAndWait;
 import java.io.IOException;
@@ -39,7 +39,7 @@ public class MainSplitPane {
     private SplitPane root;
 
     public MainSplitPane() {
-        final URL resource = PodInfoPane.class.getClassLoader().getResource("MainSplitPane.fxml");
+        final URL resource = PodDetailsPane.class.getClassLoader().getResource("MainSplitPane.fxml");
         FXMLLoader fxmlLoader = new FXMLLoader(resource);
         fxmlLoader.setClassLoader(this.getClass().getClassLoader());
         fxmlLoader.setController(this);

@@ -207,4 +207,10 @@ public class KubernetesClientImpl implements KubernetesClient {
         return null;
     }
 
+    ObjectProperty<io.fabric8.kubernetes.client.KubernetesClient> getClient() {
+        return client;
+    }
+    
+    
+
 }

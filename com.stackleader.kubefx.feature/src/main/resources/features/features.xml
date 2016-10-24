@@ -8,6 +8,7 @@
         <bundle>wrap:mvn:com.miglayout/miglayout-javafx/5.0</bundle>
         <bundle>wrap:mvn:de.jensd/fontawesomefx/8.9</bundle>
         <bundle>mvn:com.google.guava/guava/19.0</bundle>
+        <bundle>mvn:com.google.code.gson/gson/2.7</bundle>
         
         <bundle>mvn:javax.validation/validation-api/1.1.0.Final</bundle>
         <bundle>mvn:org.hibernate/hibernate-validator/4.2.0.Final</bundle>
@@ -20,6 +21,10 @@
         <bundle>mvn:io.fabric8/zjsonpatch/0.2.3</bundle>
         <bundle>mvn:org.apache.servicemix.bundles/org.apache.servicemix.bundles.okio/1.9.0_1</bundle>
         <bundle>mvn:org.apache.servicemix.bundles/org.apache.servicemix.bundles.okhttp/3.4.1_1</bundle>
+         <bundle>wrap:mvn:com.squareup.retrofit/retrofit/2.0.0-beta2</bundle>
+         <bundle>wrap:mvn:com.squareup.retrofit2/retrofit/2.1.0</bundle>
+         <bundle>wrap:mvn:com.squareup.retrofit2/converter-gson/2.1.0</bundle>
+        
         <bundle>mvn:org.apache.httpcomponents/httpcore-osgi/4.4.5</bundle>
         <bundle>mvn:org.apache.httpcomponents/httpclient-osgi/4.5.2</bundle>
         

@@ -3,6 +3,8 @@ package com.stackleader.kubefx.ui.tabs;
 import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Reference;
+import com.stackleader.kubefx.kubernetes.api.HeapsterClient;
+import com.stackleader.kubefx.kubernetes.api.HeapsterClient.PodCpuUsage;
 import com.stackleader.kubefx.kubernetes.api.KubernetesClient;
 import com.stackleader.kubefx.kubernetes.api.model.Pod;
 import com.stackleader.kubefx.ui.selections.SelectionInfo;
@@ -11,7 +13,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.time.Duration;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.CompletableFuture;
@@ -23,6 +27,10 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.chart.AreaChart;
+import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -45,10 +53,10 @@ import org.slf4j.LoggerFactory;
  *
  * @author dcnorris
  */
-@Component(immediate = true, provide = PodInfoPane.class)
-public class PodInfoPane extends StackPane {
+@Component(immediate = true, provide = PodDetailsPane.class)
+public class PodDetailsPane extends StackPane {
 
-    private static final Logger LOG = LoggerFactory.getLogger(PodInfoPane.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PodDetailsPane.class);
     private KubernetesClient client;
     private SelectionInfo selectionInfo;
     @FXML
@@ -69,9 +77,9 @@ public class PodInfoPane extends StackPane {
     private final BlockingDeque<String> logContent;
     private EventSource<Void> updateStream;
     public ObservableList<Pair<String, String>> data;
-    //https://104.196.24.121/api/v1/proxy/namespaces/kube-system/services/heapster/api/v1/metric-export
-    //https://104.196.24.121/api/v1/proxy/namespaces/kube-system/services/heapster/api/v1/model/namespaces/default/pods/nginx-proxy-v1.0.19-k3ib6/metrics/uptime
-    public PodInfoPane() {
+    private HeapsterClient heapsterClient;
+
+    public PodDetailsPane() {
         infoTable = new TableView<>();
         final StackPane placeHolder = new StackPane();
         placeHolder.getStyleClass().add("base");
@@ -99,7 +107,7 @@ public class PodInfoPane extends StackPane {
             }
         });
         infoTable.getColumns().setAll(nameColumn, valueColumn);
-        final URL resource = PodInfoPane.class.getClassLoader().getResource("podInfo.fxml");
+        final URL resource = PodDetailsPane.class.getClassLoader().getResource("podInfo.fxml");
         FXMLLoader fxmlLoader = new FXMLLoader(resource);
         fxmlLoader.setClassLoader(this.getClass().getClassLoader());
         fxmlLoader.setController(this);
@@ -143,13 +151,7 @@ public class PodInfoPane extends StackPane {
         });
         selectionInfo.getSelectedPod().addListener((ObservableValue<? extends Optional<Pod>> observable, Optional<Pod> oldValue, Optional<Pod> newValue) -> {
             newValue.ifPresent((Pod selectedPod) -> {
-                Platform.runLater(() -> {
-                    logsTextArea.clear();
-                    this.selectedPod = selectedPod;
-                    data.clear();
-                    tailToggleBtn.setSelected(false);
-                    data.addAll(selectedPod.getAttributes());
-                });
+                refreshPaneContent(selectedPod);
             });
         });
         tailToggleBtn.selectedProperty().addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean isSelected) -> {
@@ -200,6 +202,19 @@ public class PodInfoPane extends StackPane {
             content.putString(logsTextArea.getText());
             clipboard.setContent(content);
         });
+
+        initializeMetrics();
+    }
+
+    private void refreshPaneContent(Pod selectedPod) {
+        Platform.runLater(() -> {
+            logsTextArea.clear();
+            this.selectedPod = selectedPod;
+            data.clear();
+            tailToggleBtn.setSelected(false);
+            data.addAll(selectedPod.getAttributes());
+        });
+        updateCpuUsageRateData(selectedPod);
     }
 
     @Reference
@@ -212,4 +227,37 @@ public class PodInfoPane extends StackPane {
         this.client = client;
     }
 
+    @Reference
+    public void setHeapsterClient(HeapsterClient heapsterClient) {
+        this.heapsterClient = heapsterClient;
+    }
+
+    private void initializeMetrics() {
+//        final NumberAxis xHourAxis = new NumberAxis(1, 15, 1);
+        final CategoryAxis timeAxis = new CategoryAxis();
+        timeAxis.setAutoRanging(true);
+        final NumberAxis yCpuUsageAxis = new NumberAxis(0, 100, 10);
+        AreaChart<String, Number> ac = new AreaChart<>(timeAxis, yCpuUsageAxis);
+        cpuChartData = new XYChart.Series();
+        cpuChartData.setName("Cpu Usage Rate Last 15 Minutes");
+        metricPane.getChildren().add(new StackPane(ac));
+        ac.getData().add(cpuChartData);
+
+    }
+    private XYChart.Series<String, Number> cpuChartData;
+
+    private void updateCpuUsageRateData(Pod selectedPod) {
+        Optional<PodCpuUsage> podCpuUsage = heapsterClient.getPodCpuUsage("default", selectedPod.getName());
+        podCpuUsage.ifPresent(podCpuRate -> {
+            Platform.runLater(() -> {
+                cpuChartData.getData().clear();
+                List<HeapsterClient.Metric> metrics = podCpuRate.metrics;
+                DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("HH:mm:ss");
+                metrics.stream().forEach(m -> {
+                    cpuChartData.getData().add(new XYChart.Data(m.timestamp.format(dateFormat), m.value));
+                });
+            });
+        });
+
+    }
 }

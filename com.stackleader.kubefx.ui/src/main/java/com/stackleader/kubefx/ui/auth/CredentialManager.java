@@ -9,7 +9,7 @@ import com.stackleader.kubefx.kubernetes.api.KubernetesClient;
 import com.stackleader.kubefx.preferences.PreferenceUtils;
 import com.stackleader.kubefx.ui.actions.RefreshAction;
 import com.stackleader.kubefx.ui.selections.SelectionInfo;
-import com.stackleader.kubefx.ui.tabs.PodInfoPane;
+import com.stackleader.kubefx.ui.tabs.PodDetailsPane;
 import static com.stackleader.kubefx.ui.utils.FXUtilities.runAndWait;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
@@ -91,7 +91,7 @@ public class CredentialManager implements PreferencesTabProvider {
 
     public CredentialManager() {
         preferences = PreferenceUtils.getClassPrefsNode(CredentialManager.class);
-        final URL resource = PodInfoPane.class.getClassLoader().getResource("credentialManager.fxml");
+        final URL resource = PodDetailsPane.class.getClassLoader().getResource("credentialManager.fxml");
         FXMLLoader fxmlLoader = new FXMLLoader(resource);
         fxmlLoader.setClassLoader(this.getClass().getClassLoader());
         fxmlLoader.setController(this);

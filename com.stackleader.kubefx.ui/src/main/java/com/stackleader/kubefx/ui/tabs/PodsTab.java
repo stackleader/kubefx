@@ -29,7 +29,7 @@ public class PodsTab extends Tab implements TabProvider, RefreshActionListener {
     private ObservableList<Pod> pods;
     private StackPane tabContent;
     private SelectionInfo selectionInfo;
-    private PodInfoPane podInfoPane;
+    private PodDetailsPane podInfoPane;
     private PodStatusTable<Pod> podTable;
 
     public PodsTab() {
@@ -84,7 +84,7 @@ public class PodsTab extends Tab implements TabProvider, RefreshActionListener {
     }
 
     @Reference
-    public void setPodInfoPane(PodInfoPane podInfoPane) {
+    public void setPodInfoPane(PodDetailsPane podInfoPane) {
         this.podInfoPane = podInfoPane;
     }
 
