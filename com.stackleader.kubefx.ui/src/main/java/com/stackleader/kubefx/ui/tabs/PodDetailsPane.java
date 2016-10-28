@@ -70,7 +70,7 @@ public class PodDetailsPane extends StackPane {
     @FXML
     private AnchorPane attributeTablePane;
     @FXML
-    private AnchorPane metricPane;
+    private StackPane metricPane;
     final TableView<Pair<String, String>> infoTable;
     private Pod selectedPod;
     private Call logRequestCall;
@@ -240,12 +240,7 @@ public class PodDetailsPane extends StackPane {
         AreaChart<String, Number> ac = new AreaChart<>(timeAxis, yCpuUsageAxis);
         cpuChartData = new XYChart.Series();
         cpuChartData.setName("Cpu Usage Rate Last 15 Minutes");
-        final StackPane stackPane = new StackPane(ac);
-        AnchorPane.setBottomAnchor(stackPane, 0d);
-        AnchorPane.setBottomAnchor(stackPane, 0d);
-        AnchorPane.setBottomAnchor(stackPane, 0d);
-        AnchorPane.setBottomAnchor(stackPane, 0d);
-        metricPane.getChildren().add(stackPane);
+        metricPane.getChildren().add(ac);
         ac.getData().add(cpuChartData);
 
     }
