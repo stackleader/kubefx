@@ -10,6 +10,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 import static org.mockito.Mockito.mock;
@@ -53,6 +54,7 @@ public class LogoBannerTest extends ApplicationTest {
         
     }
 
+    @Ignore
     @Test
     public void show_banner() throws InterruptedException {
         Thread.sleep(5000);
