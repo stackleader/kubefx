@@ -2,7 +2,6 @@ package com.stackleader.kubefx.ui.auth;
 
 import java.util.Objects;
 import javax.validation.constraints.NotNull;
-import org.hibernate.validator.constraints.URL;
 
 /**
  *
@@ -16,7 +15,6 @@ public class BasicAuthCredential {
     private String username;
     @NotNull
     private String password;
-    @URL
     @NotNull
     private String masterUrl;
 

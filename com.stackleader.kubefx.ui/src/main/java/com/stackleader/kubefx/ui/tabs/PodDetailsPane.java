@@ -240,7 +240,12 @@ public class PodDetailsPane extends StackPane {
         AreaChart<String, Number> ac = new AreaChart<>(timeAxis, yCpuUsageAxis);
         cpuChartData = new XYChart.Series();
         cpuChartData.setName("Cpu Usage Rate Last 15 Minutes");
-        metricPane.getChildren().add(new StackPane(ac));
+        final StackPane stackPane = new StackPane(ac);
+        AnchorPane.setBottomAnchor(stackPane, 0d);
+        AnchorPane.setBottomAnchor(stackPane, 0d);
+        AnchorPane.setBottomAnchor(stackPane, 0d);
+        AnchorPane.setBottomAnchor(stackPane, 0d);
+        metricPane.getChildren().add(stackPane);
         ac.getData().add(cpuChartData);
 
     }
@@ -252,7 +257,7 @@ public class PodDetailsPane extends StackPane {
             Platform.runLater(() -> {
                 cpuChartData.getData().clear();
                 List<HeapsterClient.Metric> metrics = podCpuRate.metrics;
-                DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("HH:mm:ss");
+                DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("HH:mm");
                 metrics.stream().forEach(m -> {
                     cpuChartData.getData().add(new XYChart.Data(m.timestamp.format(dateFormat), m.value));
                 });
