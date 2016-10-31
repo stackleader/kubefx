@@ -3,12 +3,14 @@ package com.stackleader.kubefx.ui.tabs;
 import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Reference;
-import com.stackleader.kubefx.kubernetes.api.HeapsterClient;
-import com.stackleader.kubefx.kubernetes.api.HeapsterClient.PodCpuUsage;
+import com.stackleader.kubefx.heapster.api.HeapsterClient;
+import com.stackleader.kubefx.heapster.api.HeapsterClient.PodCpuUsage;
 import com.stackleader.kubefx.kubernetes.api.KubernetesClient;
 import com.stackleader.kubefx.kubernetes.api.model.Pod;
 import com.stackleader.kubefx.ui.selections.SelectionInfo;
 import static com.stackleader.kubefx.ui.utils.FXUtilities.runAndWait;
+import eu.hansolo.medusa.Gauge;
+import eu.hansolo.medusa.GaugeBuilder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -27,6 +29,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
@@ -39,7 +42,9 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
 import javafx.util.Callback;
 import javafx.util.Pair;
 import okhttp3.Call;
@@ -70,7 +75,11 @@ public class PodDetailsPane extends StackPane {
     @FXML
     private AnchorPane attributeTablePane;
     @FXML
-    private StackPane metricPane;
+    private AnchorPane cpuPane;
+    @FXML
+    private AnchorPane ramPane;
+    @FXML
+    private AnchorPane ioPane;
     final TableView<Pair<String, String>> infoTable;
     private Pod selectedPod;
     private Call logRequestCall;
@@ -78,6 +87,7 @@ public class PodDetailsPane extends StackPane {
     private EventSource<Void> updateStream;
     public ObservableList<Pair<String, String>> data;
     private HeapsterClient heapsterClient;
+    private BundleContext bc;
 
     public PodDetailsPane() {
         infoTable = new TableView<>();
@@ -135,6 +145,7 @@ public class PodDetailsPane extends StackPane {
 
     @Activate
     public void activate(BundleContext bc) {
+        this.bc = bc;
         Platform.runLater(() -> {
             infoTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
             logsTextArea.setEditable(false);
@@ -215,6 +226,7 @@ public class PodDetailsPane extends StackPane {
             data.addAll(selectedPod.getAttributes());
         });
         updateCpuUsageRateData(selectedPod);
+        updateMemoryUsageData(selectedPod);
     }
 
     @Reference
@@ -233,17 +245,42 @@ public class PodDetailsPane extends StackPane {
     }
 
     private void initializeMetrics() {
-//        final NumberAxis xHourAxis = new NumberAxis(1, 15, 1);
+        initializeCpuUsageChart();
+        initializeMemoryGuage();
+        initializeIoChart();
+    }
+
+    private void initializeCpuUsageChart() {
         final CategoryAxis timeAxis = new CategoryAxis();
         timeAxis.setAutoRanging(true);
         final NumberAxis yCpuUsageAxis = new NumberAxis(0, 100, 10);
         AreaChart<String, Number> ac = new AreaChart<>(timeAxis, yCpuUsageAxis);
+        ac.getStylesheets().add(bc.getBundle().getEntry("chartStyle.css").toExternalForm());
         cpuChartData = new XYChart.Series();
-        cpuChartData.setName("Cpu Usage Rate Last 15 Minutes");
-        metricPane.getChildren().add(ac);
+        cpuChartData.setName("Usage Rate Last 15 Minutes");
+        cpuPane.getChildren().add(ac);
         ac.getData().add(cpuChartData);
-
     }
+
+    private void initializeMemoryGuage() {
+        memoryGuage = GaugeBuilder.create()
+                .skinType(Gauge.SkinType.LEVEL)
+                .backgroundPaint(Color.TRANSPARENT)
+                .valueColor(Color.web("#DDDDDD"))
+                .barColor(Color.web("#E24D42"))
+                .build();
+        ramPane.heightProperty().addListener((ObservableValue<? extends Number> observable, Number oldValue, Number newValue) -> {
+            memoryGuage.setPadding(new Insets(ramPane.getHeight() * .1, 0, 0, 0));
+        });
+        memoryGuage.setPadding(new Insets(ramPane.getHeight() * .1, 0, 0, 0));
+        BorderPane borderPane = new BorderPane(memoryGuage);
+        AnchorPane.setBottomAnchor(borderPane, 0d);
+        AnchorPane.setTopAnchor(borderPane, 0d);
+        AnchorPane.setRightAnchor(borderPane, 0d);
+        AnchorPane.setLeftAnchor(borderPane, 0d);
+        ramPane.getChildren().add(borderPane);
+    }
+    private Gauge memoryGuage;
     private XYChart.Series<String, Number> cpuChartData;
 
     private void updateCpuUsageRateData(Pod selectedPod) {
@@ -260,4 +297,39 @@ public class PodDetailsPane extends StackPane {
         });
 
     }
+
+    private void updateMemoryUsageData(Pod selectedPod) {
+
+        Optional<HeapsterClient.PodMemoryUsage> memoryUsage = heapsterClient.getPodMemoryUsage(selectedPod.getNamespace(), selectedPod.getName());
+        memoryUsage.ifPresent(podMemoryUsage -> {
+            Optional<HeapsterClient.PodMemoryLimit> memoryLimits = heapsterClient.getPodMemoryLimit(selectedPod.getNamespace(), selectedPod.getName());
+            memoryLimits.ifPresent(podMemoryLimit -> {
+                podMemoryUsage.metrics.stream()
+                        .filter(limit -> limit.timestamp.equals(podMemoryUsage.latestTimestamp))
+                        .findFirst()
+                        .ifPresent(latestMemoryUsage -> {
+                            podMemoryLimit.metrics.stream()
+                                    .filter(limit -> limit.timestamp.equals(podMemoryLimit.latestTimestamp))
+                                    .findFirst()
+                                    .ifPresent(latestMemoryLimit -> {
+                                        Platform.runLater(() -> {
+                                            List<HeapsterClient.MemoryMetric> metrics = podMemoryUsage.metrics;
+                                            double used = (double) latestMemoryUsage.value.getValue() / (double) latestMemoryLimit.value.getValue();
+                                            if (Double.isInfinite(used)) {
+                                                memoryGuage.setValue(0);
+                                            } else {
+                                                memoryGuage.setValue(used * 100);
+                                            }
+                                        });
+                                    });
+                        });
+
+            });
+        });
+
+    }
+
+    private void initializeIoChart() {
+    }
+
 }

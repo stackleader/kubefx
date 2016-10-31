@@ -196,7 +196,11 @@
                 <artifactId>gson</artifactId>
                 <version>2.7</version>
             </dependency>
-
+            <dependency>
+                <groupId>eu.hansolo</groupId>
+                <artifactId>Medusa</artifactId>
+                <version>6.0</version>
+            </dependency>
             <!--modules-->
             <dependency>
                 <groupId>com.stackleader</groupId>

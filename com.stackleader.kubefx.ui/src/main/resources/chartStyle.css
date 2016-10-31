@@ -1,0 +1,26 @@
+.chart {
+    -fx-background-color: #1E1E1E;
+}
+.graph {
+    -fx-background-color: #1E1E1E;
+}
+.chart-content {
+    -fx-background-color: #1E1E1E;
+}
+
+.axis-label {
+    -fx-text-fill: #808080;
+}
+
+.chart-plot-background {
+    -fx-background-color: #1E1E1E;
+}
+.chart-vertical-grid-lines {
+    visibility: hidden;
+}
+.chart-horizontal-grid-lines {
+    visibility: hidden;
+}
+.chart-alternative-row-fill {
+    -fx-background-color: #1E1E1E;
+}

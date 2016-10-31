@@ -62,7 +62,7 @@
             <groupId>com.stackleader</groupId>
             <artifactId>com.stackleader.kubefx.preferences</artifactId>
         </dependency>
-         <dependency>
+        <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient-osgi</artifactId>
         </dependency>
@@ -74,6 +74,10 @@
         <dependency>
             <groupId>com.stackleader</groupId>
             <artifactId>com.stackleader.kubefx.config.api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>eu.hansolo</groupId>
+            <artifactId>Medusa</artifactId>
         </dependency>
     </dependencies>
     

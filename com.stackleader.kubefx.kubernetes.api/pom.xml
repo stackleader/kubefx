@@ -123,6 +123,7 @@
                     <instructions>
                         <Export-Package>
                             ${project.artifactId},
+                            com.stackleader.kubefx.heapster.api,
                             ${project.artifactId}.model,
                         </Export-Package>
                         <Import-Package>

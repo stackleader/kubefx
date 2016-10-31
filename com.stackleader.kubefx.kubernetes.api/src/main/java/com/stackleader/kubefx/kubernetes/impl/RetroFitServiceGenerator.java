@@ -6,6 +6,7 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
+import com.stackleader.kubefx.heapster.api.MemoryString;
 import io.fabric8.kubernetes.client.Config;
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -106,13 +107,23 @@ public class RetroFitServiceGenerator {
 //
 //    }
     private Gson createCustomGson() {
-        Gson gson = new GsonBuilder().registerTypeAdapter(LocalDateTime.class, new JsonDeserializer<LocalDateTime>() {
+        final JsonDeserializer<LocalDateTime> localDateTimeTypeAdapter = new JsonDeserializer<LocalDateTime>() {
             @Override
             public LocalDateTime deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
                 LocalDateTime localDateTime = LocalDateTime.parse(json.getAsJsonPrimitive().getAsString(), DateTimeFormatter.ISO_ZONED_DATE_TIME);
                 return localDateTime;
             }
-        }).create();
+        };
+        final JsonDeserializer<MemoryString> memoryStringTypeAdapter = new JsonDeserializer<MemoryString>() {
+            @Override
+            public MemoryString deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+                return new MemoryString(json.getAsJsonPrimitive().getAsLong());
+            }
+        };
+        Gson gson = new GsonBuilder()
+                .registerTypeAdapter(LocalDateTime.class, localDateTimeTypeAdapter)
+                .registerTypeAdapter(MemoryString.class, memoryStringTypeAdapter)
+                .create();
         return gson;
     }
 }

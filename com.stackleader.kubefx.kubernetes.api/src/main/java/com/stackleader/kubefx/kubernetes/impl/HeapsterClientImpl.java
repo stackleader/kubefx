@@ -1,7 +1,7 @@
 package com.stackleader.kubefx.kubernetes.impl;
 
-import com.stackleader.kubefx.kubernetes.api.HeapsterClient;
-import com.stackleader.kubefx.kubernetes.api.HeapsterClient.PodCpuUsage;
+import com.stackleader.kubefx.heapster.api.HeapsterClient;
+import com.stackleader.kubefx.heapster.api.HeapsterClient.PodCpuUsage;
 import com.stackleader.kubefx.kubernetes.api.KubernetesClient;
 import java.io.IOException;
 import java.util.Optional;
@@ -57,6 +57,36 @@ public class HeapsterClientImpl implements HeapsterClient {
         if (clientInternal != null) {
             PodCpuUsage body = null;
             final Call<PodCpuUsage> podCpuUsage = clientInternal.podCpuUsage(namespace, podName);
+            try {
+                body = podCpuUsage.execute().body();
+            } catch (IOException ex) {
+                LOG.error(ex.getMessage(), ex);
+            }
+            return Optional.ofNullable(body);
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<PodMemoryLimit> getPodMemoryLimit(String namespace, String podName) {
+        if (clientInternal != null) {
+            PodMemoryLimit body = null;
+            final Call<PodMemoryLimit> podCpuUsage = clientInternal.podMemoryLimit(namespace, podName);
+            try {
+                body = podCpuUsage.execute().body();
+            } catch (IOException ex) {
+                LOG.error(ex.getMessage(), ex);
+            }
+            return Optional.ofNullable(body);
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<PodMemoryUsage> getPodMemoryUsage(String namespace, String podName) {
+        if (clientInternal != null) {
+            PodMemoryUsage body = null;
+            final Call<PodMemoryUsage> podCpuUsage = clientInternal.podMemoryUsage(namespace, podName);
             try {
                 body = podCpuUsage.execute().body();
             } catch (IOException ex) {
