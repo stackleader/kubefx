@@ -6,6 +6,11 @@ import aQute.bnd.annotation.component.Reference;
 import com.stackleader.kubefx.config.api.PreferencesTabProvider;
 import com.stackleader.kubefx.kubernetes.api.KubeConfigUtils;
 import com.stackleader.kubefx.kubernetes.api.KubernetesClient;
+import com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential;
+import static com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential.IS_ACTIVE_PREF_KEY;
+import static com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential.MASTER_URL_PREF_KEY;
+import static com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential.PASSWORD_PREF_KEY;
+import static com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential.USERNAME_PREF_KEY;
 import com.stackleader.kubefx.preferences.PreferenceUtils;
 import com.stackleader.kubefx.ui.actions.RefreshAction;
 import com.stackleader.kubefx.ui.selections.SelectionInfo;
@@ -20,6 +25,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import javafx.application.Platform;
@@ -77,7 +83,6 @@ public class CredentialManager implements PreferencesTabProvider {
     private Button cancelBtn;
     @FXML
     private Button testBtn;
-
     @FXML
     private Label testResultLabel;
 
@@ -85,9 +90,9 @@ public class CredentialManager implements PreferencesTabProvider {
     private SelectionInfo selectionInfo;
     private Preferences preferences;
     private RefreshAction refreshAction;
-    private KubernetesClient client;
     private ConfigurationAdmin configAdmin;
     private BasicAuthCredentialValidator basicAuthValidator;
+    private final static FontAwesomeIconView ACTIVE_CREDENTIAL_ICON = new FontAwesomeIconView(FontAwesomeIcon.CHECK);
 
     public CredentialManager() {
         preferences = PreferenceUtils.getClassPrefsNode(CredentialManager.class);
@@ -126,6 +131,7 @@ public class CredentialManager implements PreferencesTabProvider {
     }
 
     private void initializeComponents() {
+        ACTIVE_CREDENTIAL_ICON.setFill(Color.FORESTGREEN);
         credentialList.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
         credentialList.setCellFactory(new Callback<ListView<BasicAuthCredential>, ListCell<BasicAuthCredential>>() {
             @Override
@@ -136,6 +142,10 @@ public class CredentialManager implements PreferencesTabProvider {
                         super.updateItem(credential, bln);
                         if (credential != null) {
                             setText(credential.getName());
+                            if (credential.isActive().get()) {
+//                                setStyle("-fx-background-color: #87e1fb;");
+                                setGraphic(ACTIVE_CREDENTIAL_ICON);
+                            }
                         } else {
                             setGraphic(null);
                             setText(null);
@@ -145,29 +155,12 @@ public class CredentialManager implements PreferencesTabProvider {
                 return listCell;
             }
         });
+
         okBtn.setOnAction(evt -> {
-            Optional.ofNullable(configTab.getTabPane()).ifPresent(tabPane -> {
-                Optional.ofNullable(tabPane.getScene()).ifPresent(scene -> {
-                    Optional.ofNullable(scene.getWindow()).ifPresent(window -> {
-                        Platform.runLater(() -> {
-                            if (save()) {
-                                window.hide();
-                            }
-                        });
-                    });
-                });
-            });
+            handleOkBtnAction();
         });
         cancelBtn.setOnAction(evt -> {
-            Optional.ofNullable(configTab.getTabPane()).ifPresent(tabPane -> {
-                Optional.ofNullable(tabPane.getScene()).ifPresent(scene -> {
-                    Optional.ofNullable(scene.getWindow()).ifPresent(window -> {
-                        Platform.runLater(() -> {
-                            window.hide();
-                        });
-                    });
-                });
-            });
+            cancelBtnAction();
         });
         BooleanBinding userPassEnabled = BooleanBinding.booleanExpression(anonCheckBox.selectedProperty()).and(Bindings.isNotNull(credentialList.getSelectionModel().selectedItemProperty()));
         usernameTextField.disableProperty().bind(userPassEnabled);
@@ -175,10 +168,70 @@ public class CredentialManager implements PreferencesTabProvider {
         testBtn.setOnAction(evt -> {
             validateCredential();
         });
+        addBtn.setOnAction(evt -> {
+            handleAddBtnAction();
+        });
+        removeBtn.setOnAction(evt -> {
+            handleRemoveBtnActino();
+        });
+        final BooleanBinding credentialSelectionNull = Bindings.isNull(credentialList.getSelectionModel().selectedItemProperty());
+        removeBtn.disableProperty().bind(credentialSelectionNull);
+        testBtn.disableProperty().bind(credentialSelectionNull);
+        hostNameTextField.disableProperty().bind(credentialSelectionNull);
+        nameTextField.disableProperty().bind(credentialSelectionNull);
+    }
+
+    private void handleOkBtnAction() {
+        Optional.ofNullable(configTab.getTabPane()).ifPresent(tabPane -> {
+            Optional.ofNullable(tabPane.getScene()).ifPresent(scene -> {
+                Optional.ofNullable(scene.getWindow()).ifPresent(window -> {
+                    Platform.runLater(() -> {
+                        if (save()) {
+                            window.hide();
+                        }
+                    });
+                });
+            });
+        });
+    }
+
+    private void handleRemoveBtnActino() {
+        try {
+            BasicAuthCredential selectedItem = getSelectedCredential();
+            Preferences node = preferences.node(selectedItem.getName());
+            node.removeNode();
+            credentialList.getItems().remove(selectedItem);
+            credentialList.getSelectionModel().selectFirst();
+            refreshSelections();
+            save();
+        } catch (BackingStoreException ex) {
+            LOG.error(ex.getMessage(), ex);
+        }
+    }
+
+    private void handleAddBtnAction() {
+        String name = "DEFAULT_" + UUID.randomUUID().toString().subSequence(0, 3);
+        Preferences node = preferences.node(name);
+        BasicAuthCredential basicAuthCredential = new BasicAuthCredential(name, "", "", "", node);
+        credentialList.getItems().add(basicAuthCredential);
+        credentialList.getSelectionModel().select(basicAuthCredential);
+        refreshSelections();
+    }
+
+    private void cancelBtnAction() {
+        Optional.ofNullable(configTab.getTabPane()).ifPresent(tabPane -> {
+            Optional.ofNullable(tabPane.getScene()).ifPresent(scene -> {
+                Optional.ofNullable(scene.getWindow()).ifPresent(window -> {
+                    Platform.runLater(() -> {
+                        window.hide();
+                    });
+                });
+            });
+        });
     }
 
     private boolean validateCredential() {
-        BasicAuthCredential selectedCredential = credentialList.getSelectionModel().getSelectedItem();
+        BasicAuthCredential selectedCredential = getSelectedCredential();
         if (selectedCredential != null) {
             updateSelectedCredential(selectedCredential);
             if (basicAuthValidator.credentialsValid(selectedCredential)) {
@@ -206,10 +259,10 @@ public class CredentialManager implements PreferencesTabProvider {
     private static final FontAwesomeIconView SUCCESS_ICON = new FontAwesomeIconView(FontAwesomeIcon.CHECK_CIRCLE);
 
     private boolean save() {
-        BasicAuthCredential selectedCredential = credentialList.getSelectionModel().getSelectedItem();
+        BasicAuthCredential selectedCredential = getSelectedCredential();
         if (selectedCredential != null) {
             updateSelectedCredential(selectedCredential);
-            updateKubeConfig(selectedCredential);
+            updateKubernetesClientConfig(selectedCredential);
             runAndWait(() -> {
                 credentialList.getItems().clear();
                 addStoredCredentials();
@@ -222,6 +275,18 @@ public class CredentialManager implements PreferencesTabProvider {
         return false;
     }
 
+    private BasicAuthCredential getSelectedCredential() {
+        BasicAuthCredential selectedCredential = credentialList.getSelectionModel().getSelectedItem();
+        if (selectedCredential == null) {
+            Optional<BasicAuthCredential> findFirst = credentialList.getItems().stream().filter(item -> item.isActive().get()).findFirst();
+            if (findFirst.isPresent()) {
+                credentialList.getSelectionModel().select(findFirst.get());
+                return findFirst.get();
+            }
+        }
+        return selectedCredential;
+    }
+
     @Reference
     public void setSelectionInfo(SelectionInfo selectionInfo) {
         this.selectionInfo = selectionInfo;
@@ -232,11 +297,13 @@ public class CredentialManager implements PreferencesTabProvider {
             Arrays.stream(preferences.childrenNames()).map(nodeName -> preferences.node(nodeName)).forEach(node -> {
                 try {
                     String name = node.name();
-                    String masterUrl = node.get("masterUrl", null);
-                    String username = node.get("username", null);
-                    String password = node.get("password", null);
+                    String masterUrl = node.get(MASTER_URL_PREF_KEY, null);
+                    String username = node.get(USERNAME_PREF_KEY, null);
+                    String password = node.get(PASSWORD_PREF_KEY, null);
+                    boolean isActive = node.getBoolean(IS_ACTIVE_PREF_KEY, false);
                     if (name != null && masterUrl != null && username != null && password != null) {
-                        BasicAuthCredential basicAuthCredential = new BasicAuthCredential(name, username, password, masterUrl);
+                        BasicAuthCredential basicAuthCredential = new BasicAuthCredential(name, username, password, masterUrl, node);
+                        basicAuthCredential.isActive().set(isActive);
                         if (!credentialList.getItems().contains(basicAuthCredential)) {
                             credentialList.getItems().add(basicAuthCredential);
                         }
@@ -252,42 +319,65 @@ public class CredentialManager implements PreferencesTabProvider {
 
     private void selectPreferredCredential() {
         try {
-            File configFile = new File(System.getProperty("user.home") + File.separator + ".kube" + File.separator + "config");
-            KubeConfigUtils.parseConfig(configFile).ifPresent(activeConfig -> {
-                String name = activeConfig.getName();
-                String masterUrl = activeConfig.getMasterUrl();
-                String username = activeConfig.getUsername();
-                String password = activeConfig.getPassword();
-                if (name != null && masterUrl != null && username != null && password != null) {
-                    Optional<BasicAuthCredential> match = credentialList.getItems().stream()
-                            .filter(cred -> masterUrl.contains(cred.getMasterUrl()))
-                            .filter(cred -> cred.getUsername().equals(username))
-                            .filter(cred -> cred.getPassword().equals(password))
-                            .findFirst();
-                    if (match.isPresent()) {
-                        credentialList.getSelectionModel().select(match.get());
-                    } else {
-                        if (credentialList.getItems().isEmpty()) {
-                            BasicAuthCredential basicAuthCredential = new BasicAuthCredential(name, username, password, masterUrl);
-                            credentialList.getItems().add(basicAuthCredential);
-                            Preferences node = preferences.node(name);
-                            node.put("masterUrl", masterUrl);
-                            node.put("username", username);
-                            node.put("password", password);
-                            credentialList.getSelectionModel().selectFirst();
-                        } else {
-                            credentialList.getSelectionModel().selectFirst();
-                        }
-                    }
-                } else {
-                    //TODO force credential add
-                }
-            });
+            if (!credentialList.getItems().isEmpty()) {
+                selectCredentialFromExistingList();
+            } else {
+                fallbackToSelectFromKubeCtlConfig();
+            }
         } catch (Exception ex) {
             LOG.warn("could not find kubctl config file, skipping");
-            if (!credentialList.getItems().isEmpty()) {
-                credentialList.getSelectionModel().selectFirst();
+        }
+    }
+
+    private void fallbackToSelectFromKubeCtlConfig() throws IOException {
+        File configFile = new File(System.getProperty("user.home") + File.separator + ".kube" + File.separator + "config");
+        KubeConfigUtils.parseConfig(configFile).ifPresent(activeConfig -> {
+            String name = activeConfig.getName();
+            String masterUrl = activeConfig.getMasterUrl();
+            String username = activeConfig.getUsername();
+            String password = activeConfig.getPassword();
+            if (name != null && masterUrl != null && username != null && password != null) {
+                Optional<BasicAuthCredential> match = credentialList.getItems().stream()
+                        .filter(cred -> masterUrl.contains(cred.getMasterUrl()))
+                        .filter(cred -> cred.getUsername().equals(username))
+                        .filter(cred -> cred.getPassword().equals(password))
+                        .findFirst();
+                if (match.isPresent()) {
+                    credentialList.getSelectionModel().select(match.get());
+                } else {
+                    if (credentialList.getItems().isEmpty()) {
+                        Preferences node = preferences.node(name);
+                        BasicAuthCredential basicAuthCredential = new BasicAuthCredential(name, username, password, masterUrl, node);
+                        credentialList.getItems().add(basicAuthCredential);
+                        credentialList.getSelectionModel().select(basicAuthCredential);
+                        refreshSelections();
+                        basicAuthCredential.isActive().set(true);
+                    } else {
+                        credentialList.getSelectionModel().selectFirst();
+                        refreshSelections();
+                    }
+                }
+            } else {
+                //TODO force credential add
             }
+        });
+    }
+
+    private void selectCredentialFromExistingList() {
+        Optional<BasicAuthCredential> activeCredential = credentialList.getItems().stream().filter(item -> item.isActive().get()).findFirst();
+        if (activeCredential.isPresent()) {
+            credentialList.getSelectionModel().select(activeCredential.get());
+        } else {
+            credentialList.getSelectionModel().selectFirst();
+            refreshSelections();
+        }
+    }
+
+    private void refreshSelections() {
+        credentialList.getItems().forEach(item -> item.isActive().set(false));
+        final BasicAuthCredential selectedItem = credentialList.getSelectionModel().getSelectedItem();
+        if (selectedItem != null) {
+            selectedItem.isActive().set(true);
         }
     }
 
@@ -296,8 +386,6 @@ public class CredentialManager implements PreferencesTabProvider {
             @Override
             public void changed(ObservableValue<? extends BasicAuthCredential> ov, BasicAuthCredential t, BasicAuthCredential selectedCredential) {
                 if (selectedCredential != null) {
-                    nameTextField.setDisable(false);
-                    hostNameTextField.setDisable(false);
                     if (!anonCheckBox.isSelected()) {
                         usernameTextField.setText(selectedCredential.getUsername());
                         passwordTextField.setText(selectedCredential.getPassword());
@@ -305,16 +393,14 @@ public class CredentialManager implements PreferencesTabProvider {
                     nameTextField.setText(selectedCredential.getName());
                     hostNameTextField.setText(selectedCredential.getMasterUrl());
                     selectionInfo.getSelectedCredential().set(Optional.ofNullable(selectedCredential));
-                    updateKubeConfig(selectedCredential);
+                    credentialList.getItems().forEach(item -> item.isActive().set(false));
+                    selectedCredential.isActive().set(true);
+                    updateKubernetesClientConfig(selectedCredential);
                 } else {
                     nameTextField.setText("");
                     hostNameTextField.setText("");
                     usernameTextField.setText("");
                     passwordTextField.setText("");
-
-                    nameTextField.setDisable(true);
-                    hostNameTextField.setDisable(true);
-
                     selectionInfo.getSelectedCredential().set(Optional.empty());
                 }
             }
@@ -324,22 +410,23 @@ public class CredentialManager implements PreferencesTabProvider {
 
     }
 
-    private void updateKubeConfig(BasicAuthCredential authCredential) {
+    private void updateKubernetesClientConfig(BasicAuthCredential authCredential) {
         try {
             Configuration configuration = configAdmin.getConfiguration(KubernetesClient.PID);
             Hashtable<String, String> properties = new Hashtable<>();
             if (authCredential.getMasterUrl() != null) {
-                properties.put("masterUrl", authCredential.getMasterUrl());
+                properties.put(MASTER_URL_PREF_KEY, authCredential.getMasterUrl());
                 if (authCredential.getUsername() != null && authCredential.getPassword() != null) {
-                    properties.put("username", authCredential.getUsername());
-                    properties.put("password", authCredential.getPassword());
+                    properties.put(USERNAME_PREF_KEY, authCredential.getUsername());
+                    properties.put(PASSWORD_PREF_KEY, authCredential.getPassword());
+                    properties.put(IS_ACTIVE_PREF_KEY, Boolean.TRUE.toString());
                 } else {
-                    properties.put("username", "");
-                    properties.put("password", "");
+                    properties.put(USERNAME_PREF_KEY, "");
+                    properties.put(PASSWORD_PREF_KEY, "");
+                    properties.put(IS_ACTIVE_PREF_KEY, Boolean.TRUE.toString());
                 }
                 configuration.update(properties);
                 FxTimer.runLater(Duration.ofMillis(750), () -> refreshAction.invokeAction());
-
             }
         } catch (IOException ex) {
             LOG.error(ex.getMessage(), ex);
@@ -357,17 +444,11 @@ public class CredentialManager implements PreferencesTabProvider {
     }
 
     @Reference
-    public void setClient(KubernetesClient client) {
-        this.client = client;
-    }
-
-    @Reference
     public void setConfigAdmin(ConfigurationAdmin configAdmin) {
         this.configAdmin = configAdmin;
     }
 
     private void updateSelectedCredential(BasicAuthCredential selectedCredential) {
-        String previousName = selectedCredential.getName();
         String name = nameTextField.getText().trim();
         String masterUrl = hostNameTextField.getText().trim();
         String username = usernameTextField.getText().trim();
@@ -376,9 +457,5 @@ public class CredentialManager implements PreferencesTabProvider {
         selectedCredential.setName(name);
         selectedCredential.setUsername(username);
         selectedCredential.setPassword(password);
-        Preferences node = preferences.node(previousName);
-        node.put("masterUrl", masterUrl);
-        node.put("username", username);
-        node.put("password", password);
     }
 }

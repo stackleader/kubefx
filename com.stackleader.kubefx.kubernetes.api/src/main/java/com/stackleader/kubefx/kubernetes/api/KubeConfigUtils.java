@@ -30,6 +30,9 @@ import java.util.Optional;
 import java.util.prefs.Preferences;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import static com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential.PASSWORD_PREF_KEY;
+import static com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential.USERNAME_PREF_KEY;
+import static com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential.MASTER_URL_PREF_KEY;
 
 /**
  * Helper class for working with the YAML config file thats located in
@@ -81,7 +84,6 @@ public class KubeConfigUtils {
         String currentContext = parseConfig.getCurrentContext();
         final Optional<NamedCluster> currentCluster = parseConfig.getClusters().stream().filter(cluster -> cluster.getName().equals(currentContext)).findFirst();
         if (currentCluster.isPresent()) {
-            String certificateAuthorityData = currentCluster.get().getCluster().getCertificateAuthorityData();
             String masterUrl = currentCluster.get().getCluster().getServer();
             final List<NamedAuthInfo> configUsers = parseConfig.getUsers();
             Optional<NamedAuthInfo> currentContextUser = configUsers.stream().filter(user -> user.getName().equals(parseConfig.getCurrentContext())).findFirst();
@@ -90,18 +92,11 @@ public class KubeConfigUtils {
                 String name = user.getName();
                 String username = user.getUser().getUsername();
                 String password = user.getUser().getPassword();
-                String clientCertData = user.getUser().getClientCertificateData();
-                String clientKeyData = user.getUser().getClientKeyData();
                 if (name != null && masterUrl != null && username != null && password != null) {
                     kubeClientConfigPrefNode.put("name", name);
-                    kubeClientConfigPrefNode.put("masterUrl", masterUrl);
-                    kubeClientConfigPrefNode.put("username", username);
-                    kubeClientConfigPrefNode.put("password", password);
-                }
-                if (certificateAuthorityData != null && clientCertData != null && clientKeyData != null) {
-                    kubeClientConfigPrefNode.put("certificateAuthorityData", certificateAuthorityData);
-                    kubeClientConfigPrefNode.put("clientCertData", clientCertData);
-                    kubeClientConfigPrefNode.put("clientKeyData", clientKeyData);
+                    kubeClientConfigPrefNode.put(MASTER_URL_PREF_KEY, masterUrl);
+                    kubeClientConfigPrefNode.put(USERNAME_PREF_KEY, username);
+                    kubeClientConfigPrefNode.put(PASSWORD_PREF_KEY, password);
                 }
                 kubeClientConfigPrefNode.flush();
             }

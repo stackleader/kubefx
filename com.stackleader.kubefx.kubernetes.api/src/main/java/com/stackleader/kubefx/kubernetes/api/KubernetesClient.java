@@ -14,6 +14,7 @@ public interface KubernetesClient {
 
     static final String PID = "com.stackleader.kubefx.kubernetes.api.KubernetesClient";
 
+
     List<Pod> getPods();
 
     List<Pod> getPods(String namespace);

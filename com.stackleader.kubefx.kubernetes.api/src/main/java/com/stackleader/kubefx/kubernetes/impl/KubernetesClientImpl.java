@@ -34,6 +34,9 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Modified;
 import org.slf4j.LoggerFactory;
+import static com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential.PASSWORD_PREF_KEY;
+import static com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential.USERNAME_PREF_KEY;
+import static com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential.MASTER_URL_PREF_KEY;
 
 /**
  *
@@ -70,24 +73,24 @@ public class KubernetesClientImpl implements KubernetesClient {
 
     private void initializeKubeClientConfig(Map<String, String> props) throws Exception {
         checkNotNull(props, "configuration cannot be null");
-        checkNotNull(props.get("masterUrl"), "masterUrl is required");
-        checkNotNull(props.get("username"), "username is required");
-        checkNotNull(props.get("password"), "password is required");
+        checkNotNull(props.get(MASTER_URL_PREF_KEY), "masterUrl is required");
+        checkNotNull(props.get(USERNAME_PREF_KEY), "username is required");
+        checkNotNull(props.get(PASSWORD_PREF_KEY), "password is required");
         String certificateAuthorityData = props.getOrDefault("certificateAuthorityData", "");
         String clientCertData = props.getOrDefault("clientCertData", "");
         String clientKeyData = props.getOrDefault("clientKeyData", "");
         if (Strings.isNullOrEmpty(certificateAuthorityData) || Strings.isNullOrEmpty(clientCertData) || Strings.isNullOrEmpty(clientKeyData)) {
             config = new ConfigBuilder()
-                    .withMasterUrl(props.get("masterUrl"))
-                    .withUsername(props.get("username"))
-                    .withPassword(props.get("password"))
+                    .withMasterUrl(props.get(MASTER_URL_PREF_KEY))
+                    .withUsername(props.get(USERNAME_PREF_KEY))
+                    .withPassword(props.get(PASSWORD_PREF_KEY))
                     .withTrustCerts(true)
                     .build();
         } else {
             config = new ConfigBuilder()
-                    .withMasterUrl(props.get("masterUrl"))
-                    .withUsername(props.get("username"))
-                    .withPassword(props.get("password"))
+                    .withMasterUrl(props.get(MASTER_URL_PREF_KEY))
+                    .withUsername(props.get(USERNAME_PREF_KEY))
+                    .withPassword(props.get(PASSWORD_PREF_KEY))
                     .withCaCertData(certificateAuthorityData)
                     .withClientCertData(clientCertData)
                     .withClientKeyData(clientKeyData)

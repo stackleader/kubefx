@@ -1,5 +1,6 @@
 package com.stackleader.kubefx.ui.auth;
 
+import com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential;
 import aQute.bnd.annotation.component.Component;
 import java.time.Duration;
 import java.util.Arrays;

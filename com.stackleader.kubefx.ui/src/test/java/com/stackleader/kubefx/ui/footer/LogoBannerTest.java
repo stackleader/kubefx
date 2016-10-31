@@ -51,7 +51,6 @@ public class LogoBannerTest extends ApplicationTest {
         Scene scene = new Scene(borderPane, 800, 50);
         stage.setScene(scene);
         stage.show();
-        
     }
 
     @Ignore

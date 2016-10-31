@@ -9,7 +9,7 @@ import com.stackleader.kubefx.kubernetes.api.model.Node;
 import com.stackleader.kubefx.kubernetes.api.model.Pod;
 import com.stackleader.kubefx.kubernetes.api.model.Service;
 import com.stackleader.kubefx.tabs.api.TabProvider;
-import com.stackleader.kubefx.ui.auth.BasicAuthCredential;
+import com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential;
 import java.util.Optional;
 import javafx.beans.property.ObjectProperty;
 

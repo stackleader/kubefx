@@ -247,7 +247,7 @@ public class PodDetailsPane extends StackPane {
     private XYChart.Series<String, Number> cpuChartData;
 
     private void updateCpuUsageRateData(Pod selectedPod) {
-        Optional<PodCpuUsage> podCpuUsage = heapsterClient.getPodCpuUsage("default", selectedPod.getName());
+        Optional<PodCpuUsage> podCpuUsage = heapsterClient.getPodCpuUsage(selectedPod.getNamespace(), selectedPod.getName());
         podCpuUsage.ifPresent(podCpuRate -> {
             Platform.runLater(() -> {
                 cpuChartData.getData().clear();

@@ -72,6 +72,10 @@ public class Pod {
         return podIp.get();
     }
 
+    public String getNamespace() {
+        return pod.getMetadata().getNamespace();
+    }
+
     //TODO implement this more thoughtfully with all relevant pod info displayed
     public List<Pair<String, String>> getAttributes() {
         final List<Pair<String, String>> attributes = new ArrayList<>();
