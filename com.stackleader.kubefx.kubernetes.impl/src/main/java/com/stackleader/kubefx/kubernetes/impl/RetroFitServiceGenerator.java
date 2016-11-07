@@ -7,7 +7,7 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.stackleader.kubefx.heapster.api.MemoryString;
-import io.fabric8.kubernetes.client.Config;
+import com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.security.cert.CertificateException;
@@ -69,21 +69,21 @@ public class RetroFitServiceGenerator {
         }
     }
 
-    public <S> S createService(Class<S> serviceClass, Config config) {
-        initializeHttpClient(config);
+    public <S> S createService(Class<S> serviceClass, BasicAuthCredential basicAuthCredential) {
+        initializeHttpClient(basicAuthCredential);
         builder = new Retrofit.Builder()
-                .baseUrl(config.getMasterUrl())
+                .baseUrl(basicAuthCredential.getHeapsterUrl())
                 .addConverterFactory(GsonConverterFactory.create(createCustomGson()));
         Retrofit retrofit = builder.client(httpClient.build()).build();
         return retrofit.create(serviceClass);
     }
 
-    private void initializeHttpClient(Config config) {
+    private void initializeHttpClient(BasicAuthCredential basicAuthCredential) {
         httpClient.addInterceptor(new Interceptor() {
             @Override
             public Response intercept(Interceptor.Chain chain) throws IOException {
                 Request original = chain.request();
-                String credential = Credentials.basic(config.getUsername(), config.getPassword());
+                String credential = Credentials.basic(basicAuthCredential.getUsername(), basicAuthCredential.getPassword());
                 Request.Builder requestBuilder = original.newBuilder()
                         .header("content-type", "application/json")
                         .header("Authorization", credential)

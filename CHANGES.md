@@ -5,4 +5,6 @@ fix logging query bug
 support for gathering configuration on startup and basic log tailing for pods
 added bundled karaf modified for javafx
 initial commit of kubefx
-
+added support for storing multiple credentials
+added support for showing memory consumption
+added charting for metrics gathered from heapster

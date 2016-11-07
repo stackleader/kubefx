@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.stackleader</groupId>
-    <artifactId>com.stackleader.kubefx.menu.api</artifactId>
+    <artifactId>com.stackleader.kubefx.selections.api</artifactId>
     <!--    Note the non-standard packaging type of 'bundle'-->
     <packaging>bundle</packaging>
     
@@ -26,6 +26,14 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.stackleader</groupId>
+            <artifactId>com.stackleader.kubefx.kubernetes.api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.stackleader</groupId>
+            <artifactId>com.stackleader.kubefx.tabs.api</artifactId>
+        </dependency>
     </dependencies>
     
     <build>
@@ -36,12 +44,13 @@
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
-                        <Export-Package>*</Export-Package>
+                        <Export-Package>com.stackleader.kubefx.selections.api</Export-Package>
                         <Import-Package>
                             !${project.artifactId},
                             *
                         </Import-Package>
                         <Service-Component>*</Service-Component>
+                        <Private-Package>com.stackleader.kubefx.selections.api.*</Private-Package>
                     </instructions>
                 </configuration>
             </plugin>  

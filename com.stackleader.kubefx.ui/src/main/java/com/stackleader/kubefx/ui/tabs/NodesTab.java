@@ -7,7 +7,7 @@ import com.stackleader.kubefx.kubernetes.api.KubernetesClient;
 import com.stackleader.kubefx.kubernetes.api.model.Node;
 import com.stackleader.kubefx.tabs.api.TabDockingPosition;
 import com.stackleader.kubefx.tabs.api.TabProvider;
-import com.stackleader.kubefx.ui.selections.SelectionInfo;
+import com.stackleader.kubefx.selections.api.SelectionInfo;
 import static com.stackleader.kubefx.ui.utils.FXUtilities.runAndWait;
 import java.util.Optional;
 import javafx.beans.value.ObservableValue;

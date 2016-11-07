@@ -1,5 +1,9 @@
 package com.stackleader.kubefx.kubernetes.api.model;
 
+import com.google.common.base.Charsets;
+import com.google.common.base.Strings;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.Hashing;
 import java.util.Objects;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
@@ -8,6 +12,8 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -15,27 +21,33 @@ import javafx.beans.value.ObservableValue;
  */
 public class BasicAuthCredential {
 
+    private static final Logger LOG = LoggerFactory.getLogger(BasicAuthCredential.class);
     public static final String PASSWORD_PREF_KEY = "password";
     public static final String USERNAME_PREF_KEY = "username";
+    public static final String NAME_PREF_KEY = "name";
     public static final String MASTER_URL_PREF_KEY = "masterUrl";
+    public static final String HEAPSTER_URL_PREF_KEY = "heapsterUrl";
     public static final String IS_ACTIVE_PREF_KEY = "isActive";
 
     private StringProperty name;
     private StringProperty username;
     private StringProperty password;
     private StringProperty masterUrl;
+    private StringProperty heapsterUrl;
 
     private BooleanProperty isActive;
 
-    public BasicAuthCredential(String name, String username, String password, String masterUrl, Preferences node) {
+    public BasicAuthCredential(String name, String username, String password, String masterUrl, String heapsterUrl, Preferences node) {
         this.name = new SimpleStringProperty(name);
         this.masterUrl = new SimpleStringProperty(masterUrl);
+        this.heapsterUrl = new SimpleStringProperty(heapsterUrl);
         this.username = new SimpleStringProperty(username);
         this.password = new SimpleStringProperty(password);
         isActive = new SimpleBooleanProperty(false);
-        node.put(MASTER_URL_PREF_KEY, this.masterUrl.get());
-        node.put(USERNAME_PREF_KEY, this.username.get());
-        node.put(PASSWORD_PREF_KEY, this.password.get());
+        node.put(MASTER_URL_PREF_KEY, Strings.nullToEmpty(this.masterUrl.get()));
+        node.put(HEAPSTER_URL_PREF_KEY, Strings.nullToEmpty(this.heapsterUrl.get()));
+        node.put(USERNAME_PREF_KEY, Strings.nullToEmpty(this.username.get()));
+        node.put(PASSWORD_PREF_KEY, Strings.nullToEmpty(this.password.get()));
         node.putBoolean(IS_ACTIVE_PREF_KEY, isActive.get());
         isActive.addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) -> {
             node.putBoolean(IS_ACTIVE_PREF_KEY, newValue);
@@ -44,17 +56,22 @@ public class BasicAuthCredential {
             try {
                 Preferences parent = node.parent();
                 node.removeNode();
-                parent.node(newValue);
-                node.putBoolean(IS_ACTIVE_PREF_KEY, isActive.get());
-                node.put(MASTER_URL_PREF_KEY, this.masterUrl.get());
-                node.put(USERNAME_PREF_KEY, this.username.get());
-                node.put(PASSWORD_PREF_KEY, this.password.get());
+                Preferences updatedNode = parent.node(getNodeName(newValue));
+                updatedNode.putBoolean(IS_ACTIVE_PREF_KEY, isActive.get());
+                updatedNode.put(NAME_PREF_KEY, newValue);
+                updatedNode.put(MASTER_URL_PREF_KEY, this.masterUrl.get());
+                updatedNode.put(HEAPSTER_URL_PREF_KEY, this.heapsterUrl.get());
+                updatedNode.put(USERNAME_PREF_KEY, this.username.get());
+                updatedNode.put(PASSWORD_PREF_KEY, this.password.get());
             } catch (BackingStoreException ex) {
-
+                LOG.error(ex.getMessage(), ex);
             }
         });
         this.masterUrl.addListener((ObservableValue<? extends String> observable, String oldValue, String newValue) -> {
             node.put(MASTER_URL_PREF_KEY, newValue);
+        });
+        this.heapsterUrl.addListener((ObservableValue<? extends String> observable, String oldValue, String newValue) -> {
+            node.put(HEAPSTER_URL_PREF_KEY, newValue);
         });
         this.username.addListener((ObservableValue<? extends String> observable, String oldValue, String newValue) -> {
             node.put(USERNAME_PREF_KEY, newValue);
@@ -104,12 +121,20 @@ public class BasicAuthCredential {
         return masterUrl.get();
     }
 
+    public String getHeapsterUrl() {
+        return heapsterUrl.get();
+    }
+
     public StringProperty masterUrl() {
         return masterUrl;
     }
 
     public void setMasterUrl(String masterUrl) {
         this.masterUrl.set(masterUrl);
+    }
+
+    public void setHeapsterUrl(String heapsterUrl) {
+        this.heapsterUrl.set(heapsterUrl);
     }
 
     public BooleanProperty isActive() {
@@ -156,6 +181,11 @@ public class BasicAuthCredential {
     @Override
     public String toString() {
         return name.get();
+    }
+
+    private String getNodeName(String filePath) {
+        HashCode hc = Hashing.md5().newHasher().putString(filePath, Charsets.UTF_8).hash();
+        return hc.toString();
     }
 
 }

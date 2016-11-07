@@ -4,11 +4,12 @@ import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Reference;
 import com.stackleader.kubefx.heapster.api.HeapsterClient;
-import com.stackleader.kubefx.heapster.api.HeapsterClient.PodCpuUsage;
 import com.stackleader.kubefx.kubernetes.api.KubernetesClient;
 import com.stackleader.kubefx.kubernetes.api.model.Pod;
-import com.stackleader.kubefx.ui.selections.SelectionInfo;
+import com.stackleader.kubefx.selections.api.SelectionInfo;
 import static com.stackleader.kubefx.ui.utils.FXUtilities.runAndWait;
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import eu.hansolo.medusa.Gauge;
 import eu.hansolo.medusa.GaugeBuilder;
 import java.io.IOException;
@@ -35,6 +36,7 @@ import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
@@ -75,11 +77,11 @@ public class PodDetailsPane extends StackPane {
     @FXML
     private AnchorPane attributeTablePane;
     @FXML
-    private AnchorPane cpuPane;
+    private StackPane cpuPane;
     @FXML
-    private AnchorPane ramPane;
+    private StackPane ramPane;
     @FXML
-    private AnchorPane ioPane;
+    private StackPane ioPane;
     final TableView<Pair<String, String>> infoTable;
     private Pod selectedPod;
     private Call logRequestCall;
@@ -90,6 +92,7 @@ public class PodDetailsPane extends StackPane {
     private BundleContext bc;
 
     public PodDetailsPane() {
+        getStyleClass().add("pod-detail-pane");
         infoTable = new TableView<>();
         final StackPane placeHolder = new StackPane();
         placeHolder.getStyleClass().add("base");
@@ -227,6 +230,7 @@ public class PodDetailsPane extends StackPane {
         });
         updateCpuUsageRateData(selectedPod);
         updateMemoryUsageData(selectedPod);
+        updateIoUsageData(selectedPod);
     }
 
     @Reference
@@ -263,73 +267,123 @@ public class PodDetailsPane extends StackPane {
     }
 
     private void initializeMemoryGuage() {
+        final Color barColor = Color.web("#E24D42");
         memoryGuage = GaugeBuilder.create()
                 .skinType(Gauge.SkinType.LEVEL)
                 .backgroundPaint(Color.TRANSPARENT)
                 .valueColor(Color.web("#DDDDDD"))
-                .barColor(Color.web("#E24D42"))
+                .barColor(barColor)
                 .build();
         ramPane.heightProperty().addListener((ObservableValue<? extends Number> observable, Number oldValue, Number newValue) -> {
             memoryGuage.setPadding(new Insets(ramPane.getHeight() * .1, 0, 0, 0));
         });
         memoryGuage.setPadding(new Insets(ramPane.getHeight() * .1, 0, 0, 0));
-        BorderPane borderPane = new BorderPane(memoryGuage);
-        AnchorPane.setBottomAnchor(borderPane, 0d);
-        AnchorPane.setTopAnchor(borderPane, 0d);
-        AnchorPane.setRightAnchor(borderPane, 0d);
-        AnchorPane.setLeftAnchor(borderPane, 0d);
-        ramPane.getChildren().add(borderPane);
+        memoryGuageLabel = new Label();
+        final FontAwesomeIconView circle = new FontAwesomeIconView(FontAwesomeIcon.CIRCLE);
+        circle.setFill(barColor);
+        memoryGuageLabel.setGraphic(circle);
+        BorderPane borderPane = new BorderPane();
+        borderPane.setBottom(new BorderPane(memoryGuageLabel));
+        ramPane.getChildren().addAll(memoryGuage, borderPane);
     }
+    private Label memoryGuageLabel;
     private Gauge memoryGuage;
     private XYChart.Series<String, Number> cpuChartData;
+    private XYChart.Series<String, Number> ioChartData;
 
     private void updateCpuUsageRateData(Pod selectedPod) {
-        Optional<PodCpuUsage> podCpuUsage = heapsterClient.getPodCpuUsage(selectedPod.getNamespace(), selectedPod.getName());
-        podCpuUsage.ifPresent(podCpuRate -> {
-            Platform.runLater(() -> {
-                cpuChartData.getData().clear();
-                List<HeapsterClient.Metric> metrics = podCpuRate.metrics;
-                DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("HH:mm");
-                metrics.stream().forEach(m -> {
-                    cpuChartData.getData().add(new XYChart.Data(m.timestamp.format(dateFormat), m.value));
+        CompletableFuture.<Void>supplyAsync(() -> {
+            heapsterClient.getPodCpuUsage(selectedPod.getNamespace(), selectedPod.getName()).ifPresent(podCpuRate -> {
+                Platform.runLater(() -> {
+                    cpuChartData.getData().clear();
+                    List<HeapsterClient.Metric> metrics = podCpuRate.metrics;
+                    DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("HH:mm");
+                    metrics.stream().forEach(m -> {
+                        cpuChartData.getData().add(new XYChart.Data(m.timestamp.format(dateFormat), m.value));
+                    });
                 });
             });
+            return null;
+        }).whenComplete((u, t) -> {
+            if (t != null) {
+                Throwable ex = (Throwable) t;
+                LOG.error(ex.getMessage(), ex);
+            }
         });
-
     }
 
     private void updateMemoryUsageData(Pod selectedPod) {
-
-        Optional<HeapsterClient.PodMemoryUsage> memoryUsage = heapsterClient.getPodMemoryUsage(selectedPod.getNamespace(), selectedPod.getName());
-        memoryUsage.ifPresent(podMemoryUsage -> {
-            Optional<HeapsterClient.PodMemoryLimit> memoryLimits = heapsterClient.getPodMemoryLimit(selectedPod.getNamespace(), selectedPod.getName());
-            memoryLimits.ifPresent(podMemoryLimit -> {
-                podMemoryUsage.metrics.stream()
-                        .filter(limit -> limit.timestamp.equals(podMemoryUsage.latestTimestamp))
-                        .findFirst()
-                        .ifPresent(latestMemoryUsage -> {
-                            podMemoryLimit.metrics.stream()
-                                    .filter(limit -> limit.timestamp.equals(podMemoryLimit.latestTimestamp))
-                                    .findFirst()
-                                    .ifPresent(latestMemoryLimit -> {
-                                        Platform.runLater(() -> {
-                                            List<HeapsterClient.MemoryMetric> metrics = podMemoryUsage.metrics;
-                                            double used = (double) latestMemoryUsage.value.getValue() / (double) latestMemoryLimit.value.getValue();
-                                            if (Double.isInfinite(used)) {
-                                                memoryGuage.setValue(0);
-                                            } else {
-                                                memoryGuage.setValue(used * 100);
-                                            }
+        CompletableFuture.<Void>supplyAsync(() -> {
+            Optional<HeapsterClient.PodMemoryUsage> memoryUsage = heapsterClient.getPodMemoryUsage(selectedPod.getNamespace(), selectedPod.getName());
+            memoryUsage.ifPresent(podMemoryUsage -> {
+                Optional<HeapsterClient.PodMemoryLimit> memoryLimits = heapsterClient.getPodMemoryLimit(selectedPod.getNamespace(), selectedPod.getName());
+                memoryLimits.ifPresent(podMemoryLimit -> {
+                    podMemoryUsage.metrics.stream()
+                            .filter(limit -> limit.timestamp.equals(podMemoryUsage.latestTimestamp))
+                            .findFirst()
+                            .ifPresent(latestMemoryUsage -> {
+                                podMemoryLimit.metrics.stream()
+                                        .filter(limit -> limit.timestamp.equals(podMemoryLimit.latestTimestamp))
+                                        .findFirst()
+                                        .ifPresent(latestMemoryLimit -> {
+                                            Platform.runLater(() -> {
+                                                List<HeapsterClient.MemoryMetric> metrics = podMemoryUsage.metrics;
+                                                double used = (double) latestMemoryUsage.value.getValue() / (double) latestMemoryLimit.value.getValue();
+                                                if (Double.isInfinite(used)) {
+                                                    memoryGuage.setValue(0);
+                                                    memoryGuageLabel.setText("0 / " + latestMemoryLimit.value.getValueString());
+                                                } else {
+                                                    final double value = used * 100;
+                                                    memoryGuage.setValue(value);
+                                                    memoryGuageLabel.setText(latestMemoryUsage.value.getValueString() + " / " + latestMemoryLimit.value.getValueString());
+                                                }
+                                            });
                                         });
-                                    });
-                        });
-
+                            });
+                });
             });
-        });
+            return null;
+        }).whenComplete((u, t) -> {
+            if (t != null) {
+                Throwable ex = (Throwable) t;
+                LOG.error(ex.getMessage(), ex);
+            }
+        });;
 
     }
 
     private void initializeIoChart() {
+        final CategoryAxis timeAxis = new CategoryAxis();
+        timeAxis.setAutoRanging(true);
+        final NumberAxis yCpuUsageAxis = new NumberAxis();
+        yCpuUsageAxis.setAutoRanging(true);
+        AreaChart<String, Number> ac = new AreaChart<>(timeAxis, yCpuUsageAxis);
+        ac.getStylesheets().add(bc.getBundle().getEntry("chartStyle.css").toExternalForm());
+        ioChartData = new XYChart.Series();
+        ioChartData.setName("Network IO Last 15 Minutes");
+        ioPane.getChildren().add(ac);
+        ac.getData().add(ioChartData);
+    }
+
+    private void updateIoUsageData(Pod selectedPod) {
+          CompletableFuture.<Void>supplyAsync(() -> {
+            heapsterClient.getPodNetworkOut(selectedPod.getNamespace(), selectedPod.getName()).ifPresent(podIoOut -> {
+                Platform.runLater(() -> {
+                    ioChartData.getData().clear();
+                    List<HeapsterClient.MemoryMetric> metrics = podIoOut.metrics;
+                    DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("HH:mm");
+                    metrics.stream().forEach(m -> {
+                        ioChartData.getData().add(new XYChart.Data(m.timestamp.format(dateFormat), m.value.getValue()));
+                    });
+                });
+            });
+            return null;
+        }).whenComplete((u, t) -> {
+            if (t != null) {
+                Throwable ex = (Throwable) t;
+                LOG.error(ex.getMessage(), ex);
+            }
+        });
     }
 
 }

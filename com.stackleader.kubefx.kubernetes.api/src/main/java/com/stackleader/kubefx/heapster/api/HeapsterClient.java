@@ -16,6 +16,10 @@ public interface HeapsterClient {
 
     Optional<PodMemoryLimit> getPodMemoryLimit(String namespace, String podName);
 
+    Optional<PodNetworkIn> getPodNetworkIn(String namespace, String podName);
+
+    Optional<PodNetworkOut> getPodNetworkOut(String namespace, String podName);
+
     public static class PodNetworkOut {
 
         public List<MemoryMetric> metrics;

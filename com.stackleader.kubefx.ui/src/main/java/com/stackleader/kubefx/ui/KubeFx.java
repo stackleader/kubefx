@@ -5,6 +5,7 @@ import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Deactivate;
 import aQute.bnd.annotation.component.Reference;
 import com.stackleader.kubefx.core.api.StageProvider;
+import com.stackleader.kubefx.ui.utils.StyleUtils;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -34,8 +35,8 @@ public class KubeFx {
                 splashStage.close();
                 Platform.runLater(() -> {
                     Scene scene = new Scene(root);
+                    StyleUtils.applyDarkTheme(root);
 //                try {
-                    scene.getStylesheets().add(bundleContext.getBundle().getEntry("main.css").toExternalForm());
                     //for scenic view styling since it can't osgi file reference
 //                    scene.getStylesheets().add(new File("/home/dcnorris/NetBeansProjects/stackleader/kubefx/com.stackleader.kubefx.ui/src/main/resources/main.css").toURI().toURL().toExternalForm());
 //                } catch (MalformedURLException ex) {

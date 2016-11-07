@@ -1,5 +1,6 @@
-package com.stackleader.kubefx.ui.selections;
+package com.stackleader.kubefx.selections.api.internal;
 
+import com.stackleader.kubefx.selections.api.SelectionInfo;
 import aQute.bnd.annotation.component.Component;
 import com.stackleader.kubefx.kubernetes.api.model.Node;
 import com.stackleader.kubefx.kubernetes.api.model.Pod;

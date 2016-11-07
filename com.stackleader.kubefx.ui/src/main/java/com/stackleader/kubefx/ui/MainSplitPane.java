@@ -4,7 +4,7 @@ import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Reference;
 import com.stackleader.kubefx.tabs.api.TabProvider;
-import com.stackleader.kubefx.ui.selections.SelectionInfo;
+import com.stackleader.kubefx.selections.api.SelectionInfo;
 import com.stackleader.kubefx.ui.tabs.PodDetailsPane;
 import com.stackleader.kubefx.ui.tabs.TabPaneManager;
 import static com.stackleader.kubefx.ui.utils.FXUtilities.runAndWait;

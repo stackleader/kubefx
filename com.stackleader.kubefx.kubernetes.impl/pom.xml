@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.stackleader</groupId>
-    <artifactId>com.stackleader.kubefx.kubernetes.api</artifactId>
+    <artifactId>com.stackleader.kubefx.kubernetes.impl</artifactId>
     <!--    Note the non-standard packaging type of 'bundle'-->
     <packaging>bundle</packaging>
     
@@ -111,6 +111,14 @@
             <artifactId>retrofit</artifactId>
             <version>2.1.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.stackleader</groupId>
+            <artifactId>com.stackleader.kubefx.kubernetes.api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.stackleader</groupId>
+            <artifactId>com.stackleader.kubefx.selections.api</artifactId>
+        </dependency>
     </dependencies>
     
     <build>
@@ -121,19 +129,11 @@
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
-                        <Export-Package>
-                            ${project.artifactId},
-                            com.stackleader.kubefx.heapster.api,
-                            ${project.artifactId}.model,
-                            io.fabric8.kubernetes.api.model,
-                            io.fabric8.kubernetes.client,
-                            io.fabric8.kubernetes.client.dsl
-                        </Export-Package>
+                        <Export-Package></Export-Package>
                         <Import-Package>
                             !${project.artifactId},
                             *
                         </Import-Package>
-                        <Embed-Dependency>kubernetes-client,kubernetes-model</Embed-Dependency>
                         <Service-Component>*</Service-Component>
                     </instructions>
                 </configuration>

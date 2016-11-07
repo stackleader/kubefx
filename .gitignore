@@ -11,3 +11,4 @@ distribution/build/
 karaf/local
 /com.stackleader.kubefx.ui/nbproject/
 /com.stackleader.kubefx.kubernetes.api/nbproject/
+/com.stackleader.kubefx.kubernetes.impl/nbproject/

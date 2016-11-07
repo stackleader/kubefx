@@ -14,16 +14,18 @@ Features
   * Provides status of Nodes, Pods, and Services
   * Tail logs
   * View Detailed information on Nodes, Pods, and Services
+  * Heapster metric charts on pods/nodes 
   * Extensibility through plugin api 
 
 TODO
 ----
 
-  * More features (longer term aim is 100% API feature support)
-  * Namespace filtering for pods
+  * Add an overview tab for big picture metric charts and info on all pods / nodes 
+  * More features (longer term aim is as close to 100% API feature support as makes sense for the tool)
+  * Namespace filtering
   * Grep and filter functionality for log tails
   * Log tail aggregation
-  * credential selection ui
+  * Heapster configuration options (currently this feature is expecting GCP style setup)
   * Plugin API Documentation
   * TBD
 

@@ -222,13 +222,13 @@
             </dependency>
             <dependency>
                 <groupId>com.stackleader</groupId>
-                <artifactId>com.stackleader.kubefx.ui</artifactId>
+                <artifactId>com.stackleader.kubefx.selections.api</artifactId>
                 <version>${project.version}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>com.stackleader</groupId>
-                <artifactId>com.stackleader.kubefx.menu.api</artifactId>
+                <artifactId>com.stackleader.kubefx.ui</artifactId>
                 <version>${project.version}</version>
                 <scope>provided</scope>
             </dependency>
@@ -327,8 +327,9 @@
         <module>com.stackleader.kubefx.config.api</module>
         <module>com.stackleader.kubefx.preferences</module>
         <module>com.stackleader.kubefx.kubernetes.api</module>
+        <module>com.stackleader.kubefx.selections.api</module>
+        <module>com.stackleader.kubefx.kubernetes.impl</module>
         <module>com.stackleader.kubefx.ui</module>
-        <module>com.stackleader.kubefx.menu.api</module>
         <module>com.stackleader.kubefx.toolbar.api</module>
         <module>com.stackleader.kubefx.tabs.api</module>
         <module>com.stackleader.kubefx.feature</module>

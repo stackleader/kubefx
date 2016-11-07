@@ -1,11 +1,11 @@
 package com.stackleader.kubefx.kubernetes.impl;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import com.google.common.base.Strings;
 import com.stackleader.kubefx.kubernetes.api.KubernetesClient;
+import com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential;
 import com.stackleader.kubefx.kubernetes.api.model.Node;
 import com.stackleader.kubefx.kubernetes.api.model.Pod;
 import com.stackleader.kubefx.kubernetes.api.model.Service;
+import com.stackleader.kubefx.selections.api.SelectionInfo;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
@@ -13,11 +13,13 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import static java.util.stream.Collectors.toList;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javax.net.ssl.SSLContext;
 import okhttp3.Authenticator;
 import okhttp3.Call;
@@ -32,11 +34,8 @@ import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
-import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
 import org.slf4j.LoggerFactory;
-import static com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential.PASSWORD_PREF_KEY;
-import static com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential.USERNAME_PREF_KEY;
-import static com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential.MASTER_URL_PREF_KEY;
 
 /**
  *
@@ -48,64 +47,59 @@ public class KubernetesClientImpl implements KubernetesClient {
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(KubernetesClientImpl.class);
     private ObjectProperty<io.fabric8.kubernetes.client.KubernetesClient> client;
     private Config config;
+    private SelectionInfo selectionInfo;
 
     public KubernetesClientImpl() {
         client = new SimpleObjectProperty<>();
     }
 
     @Activate
-    public void activate(Map<String, String> props) {
+    public void activate() {
         try {
-            initializeKubeClientConfig(props);
+            initializeKubeClientConfig();
+            initializeUpdateListener();
         } catch (Exception ex) {
             LOG.info("could not initialize kubernetes client, possibly there is not yet any configuration.");
         }
     }
 
-    @Modified //TODO not sure why update isn't working with configuration metatype 
-    public void updated(Map<String, String> props) {
-        try {
-            initializeKubeClientConfig(props);
-        } catch (Exception ex) {
-            LOG.warn("could not update kubernetes client, invalid configuration, possibly there is not yet any configuration");
-        }
+    public void initializeUpdateListener() {
+        selectionInfo.getSelectedCredential().addListener(new ChangeListener<Optional<BasicAuthCredential>>() {
+            @Override
+            public void changed(ObservableValue<? extends Optional<BasicAuthCredential>> observable, Optional<BasicAuthCredential> oldValue, Optional<BasicAuthCredential> newValue) {
+                try {
+                    initializeKubeClientConfig();
+                } catch (Exception ex) {
+                    LOG.info("could not initialize kubernetes client, enable debug logging for details.");
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug(ex.getMessage(), ex);
+                    }
+                }
+            }
+        });
+
     }
 
-    private void initializeKubeClientConfig(Map<String, String> props) throws Exception {
-        checkNotNull(props, "configuration cannot be null");
-        checkNotNull(props.get(MASTER_URL_PREF_KEY), "masterUrl is required");
-        checkNotNull(props.get(USERNAME_PREF_KEY), "username is required");
-        checkNotNull(props.get(PASSWORD_PREF_KEY), "password is required");
-        String certificateAuthorityData = props.getOrDefault("certificateAuthorityData", "");
-        String clientCertData = props.getOrDefault("clientCertData", "");
-        String clientKeyData = props.getOrDefault("clientKeyData", "");
-        if (Strings.isNullOrEmpty(certificateAuthorityData) || Strings.isNullOrEmpty(clientCertData) || Strings.isNullOrEmpty(clientKeyData)) {
+    private void initializeKubeClientConfig() throws Exception {
+        Optional<BasicAuthCredential> basicAuthCredential = selectionInfo.getSelectedCredential().get();
+        if (basicAuthCredential.isPresent()) {
             config = new ConfigBuilder()
-                    .withMasterUrl(props.get(MASTER_URL_PREF_KEY))
-                    .withUsername(props.get(USERNAME_PREF_KEY))
-                    .withPassword(props.get(PASSWORD_PREF_KEY))
+                    .withMasterUrl(basicAuthCredential.get().getMasterUrl())
+                    .withUsername(basicAuthCredential.get().getUsername())
+                    .withPassword(basicAuthCredential.get().getPassword())
                     .withTrustCerts(true)
                     .build();
-        } else {
-            config = new ConfigBuilder()
-                    .withMasterUrl(props.get(MASTER_URL_PREF_KEY))
-                    .withUsername(props.get(USERNAME_PREF_KEY))
-                    .withPassword(props.get(PASSWORD_PREF_KEY))
-                    .withCaCertData(certificateAuthorityData)
-                    .withClientCertData(clientCertData)
-                    .withClientKeyData(clientKeyData)
+            SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(null,
+                    new TrustSelfSignedStrategy()).build();
+            httpClient = new OkHttpClient.Builder()
+                    .authenticator(getBasicAuth(config.getUsername(), config.getPassword()))
+                    .sslSocketFactory(sslContext.getSocketFactory())
+                    .connectTimeout(3, TimeUnit.SECONDS)
+                    .writeTimeout(5, TimeUnit.MINUTES)
+                    .readTimeout(30, TimeUnit.MINUTES)
                     .build();
+            client.set(new DefaultKubernetesClient(httpClient, config));
         }
-        SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(null,
-                new TrustSelfSignedStrategy()).build();
-        httpClient = new OkHttpClient.Builder()
-                .authenticator(getBasicAuth(config.getUsername(), config.getPassword()))
-                .sslSocketFactory(sslContext.getSocketFactory())
-                .connectTimeout(3, TimeUnit.SECONDS)
-                .writeTimeout(5, TimeUnit.MINUTES)
-                .readTimeout(30, TimeUnit.MINUTES)
-                .build();
-        client.set(new DefaultKubernetesClient(httpClient, config));
     }
     private OkHttpClient httpClient;
 
@@ -195,9 +189,8 @@ public class KubernetesClientImpl implements KubernetesClient {
     @Override
     public Call tailLogs(Pod pod) {
         try {
-            final String selectedNamespace = "default";
 
-            final String kube = config.getMasterUrl() + "api/" + config.getApiVersion() + "/namespaces/" + selectedNamespace + "/pods/" + pod.getName() + "/log?follow=true";
+            final String kube = config.getMasterUrl() + "api/" + config.getApiVersion() + "/namespaces/" + pod.getNamespace() + "/pods/" + pod.getName() + "/log?follow=true";
             Request request = new Request.Builder()
                     .url(kube)
                     .build();
@@ -213,7 +206,10 @@ public class KubernetesClientImpl implements KubernetesClient {
     ObjectProperty<io.fabric8.kubernetes.client.KubernetesClient> getClient() {
         return client;
     }
-    
-    
+
+    @Reference
+    public void setSelectionInfo(SelectionInfo selectionInfo) {
+        this.selectionInfo = selectionInfo;
+    }
 
 }

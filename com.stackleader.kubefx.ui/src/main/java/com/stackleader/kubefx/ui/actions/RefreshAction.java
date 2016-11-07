@@ -3,8 +3,8 @@ package com.stackleader.kubefx.ui.actions;
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Reference;
 import com.google.common.collect.Sets;
-import static com.stackleader.kubefx.ui.utils.FXUtilities.runAndWait;
 import java.util.Set;
+import javafx.application.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +24,6 @@ public class RefreshAction extends AbstractKubeAction implements KubeAction, Run
         listeners = Sets.newConcurrentHashSet();
     }
 
-
     @Override
     public Runnable getAction() {
         return this;
@@ -32,7 +31,7 @@ public class RefreshAction extends AbstractKubeAction implements KubeAction, Run
 
     @Override
     public void run() {
-        runAndWait(() -> {
+        Platform.runLater(() -> {
             for (RefreshActionListener listener : listeners) {
                 try {
                     listener.refresh();

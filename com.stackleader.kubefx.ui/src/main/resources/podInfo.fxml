@@ -24,18 +24,18 @@
                               <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                 <tabs>
                                   <Tab text="CPU">
-                                    <content>
-                                      <AnchorPane fx:id="cpuPane" minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
-                                    </content>
+                                       <content>
+                                          <StackPane fx:id="cpuPane" prefHeight="150.0" prefWidth="200.0" />
+                                       </content>
                                   </Tab>
                                     <Tab text="Memory">
                                        <content>
-                                          <AnchorPane fx:id="ramPane" minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+                                          <StackPane fx:id="ramPane" />
                                        </content>
                                     </Tab>
                                     <Tab text="I/O">
                                        <content>
-                                          <AnchorPane fx:id="ioPane" minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+                                          <StackPane fx:id="ioPane" />
                                        </content>
                                     </Tab>
                                 </tabs>

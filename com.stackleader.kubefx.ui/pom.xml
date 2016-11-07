@@ -79,6 +79,10 @@
             <groupId>eu.hansolo</groupId>
             <artifactId>Medusa</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.stackleader</groupId>
+            <artifactId>com.stackleader.kubefx.selections.api</artifactId>
+        </dependency>
     </dependencies>
     
     <build>

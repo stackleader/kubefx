@@ -1,0 +1,38 @@
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: 12345
+    server: https://888.888.88.888
+  name: gke_us-east1-c_production
+- cluster:
+    certificate-authority-data: 12345
+    server: https://888.888.88.88
+  name: gke_b_cluster-1
+- cluster:
+    server: 88.88.88.88
+  name: production
+contexts:
+- context:
+    cluster: gke_us-east1-c_production
+    user: gke_us-east1-c_production
+  name: gke_us-east1-c_production
+- context:
+    cluster: gke_cluster-1
+    user: gke_cluster-1
+  name: gke_cluster-1
+current-context: gke_us-east1-c_production
+kind: Config
+preferences: {}
+users:
+- name: gke_us-east1-c_production
+  user:
+    client-certificate-data: 12345
+    client-key-data: 12345
+    password: changme
+    username: admin
+- name: gke_cluster-1
+  user:
+    client-certificate-data: 12345
+    client-key-data: 12345
+    password: changme
+    username: admin

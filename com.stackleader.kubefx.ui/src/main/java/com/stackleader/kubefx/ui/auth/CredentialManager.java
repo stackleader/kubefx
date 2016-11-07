@@ -5,15 +5,16 @@ import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Reference;
 import com.stackleader.kubefx.config.api.PreferencesTabProvider;
 import com.stackleader.kubefx.kubernetes.api.KubeConfigUtils;
-import com.stackleader.kubefx.kubernetes.api.KubernetesClient;
 import com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential;
+import static com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential.HEAPSTER_URL_PREF_KEY;
 import static com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential.IS_ACTIVE_PREF_KEY;
 import static com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential.MASTER_URL_PREF_KEY;
+import static com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential.NAME_PREF_KEY;
 import static com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential.PASSWORD_PREF_KEY;
 import static com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential.USERNAME_PREF_KEY;
 import com.stackleader.kubefx.preferences.PreferenceUtils;
+import com.stackleader.kubefx.selections.api.SelectionInfo;
 import com.stackleader.kubefx.ui.actions.RefreshAction;
-import com.stackleader.kubefx.ui.selections.SelectionInfo;
 import com.stackleader.kubefx.ui.tabs.PodDetailsPane;
 import static com.stackleader.kubefx.ui.utils.FXUtilities.runAndWait;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
@@ -23,7 +24,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Hashtable;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.prefs.BackingStoreException;
@@ -47,8 +47,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Callback;
-import org.osgi.service.cm.Configuration;
-import org.osgi.service.cm.ConfigurationAdmin;
 import org.reactfx.util.FxTimer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,6 +72,8 @@ public class CredentialManager implements PreferencesTabProvider {
     @FXML
     private TextField usernameTextField;
     @FXML
+    private TextField heapsterUrlTextField;
+    @FXML
     private PasswordField passwordTextField;
     @FXML
     private CheckBox anonCheckBox;
@@ -90,7 +90,6 @@ public class CredentialManager implements PreferencesTabProvider {
     private SelectionInfo selectionInfo;
     private Preferences preferences;
     private RefreshAction refreshAction;
-    private ConfigurationAdmin configAdmin;
     private BasicAuthCredentialValidator basicAuthValidator;
     private final static FontAwesomeIconView ACTIVE_CREDENTIAL_ICON = new FontAwesomeIconView(FontAwesomeIcon.CHECK);
 
@@ -178,7 +177,16 @@ public class CredentialManager implements PreferencesTabProvider {
         removeBtn.disableProperty().bind(credentialSelectionNull);
         testBtn.disableProperty().bind(credentialSelectionNull);
         hostNameTextField.disableProperty().bind(credentialSelectionNull);
+        heapsterUrlTextField.disableProperty().bind(credentialSelectionNull);
         nameTextField.disableProperty().bind(credentialSelectionNull);
+        hostNameTextField.focusedProperty().addListener(new ChangeListener<Boolean>() {
+            @Override
+            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+                if (heapsterUrlTextField.getText().isEmpty()) {
+                    heapsterUrlTextField.setText(hostNameTextField.getText() + HEAPSTER_DEFAULT_URL_PATH);
+                }
+            }
+        });
     }
 
     private void handleOkBtnAction() {
@@ -212,7 +220,7 @@ public class CredentialManager implements PreferencesTabProvider {
     private void handleAddBtnAction() {
         String name = "DEFAULT_" + UUID.randomUUID().toString().subSequence(0, 3);
         Preferences node = preferences.node(name);
-        BasicAuthCredential basicAuthCredential = new BasicAuthCredential(name, "", "", "", node);
+        BasicAuthCredential basicAuthCredential = new BasicAuthCredential(name, "", "", "", "", node);
         credentialList.getItems().add(basicAuthCredential);
         credentialList.getSelectionModel().select(basicAuthCredential);
         refreshSelections();
@@ -262,7 +270,7 @@ public class CredentialManager implements PreferencesTabProvider {
         BasicAuthCredential selectedCredential = getSelectedCredential();
         if (selectedCredential != null) {
             updateSelectedCredential(selectedCredential);
-            updateKubernetesClientConfig(selectedCredential);
+            triggerDelayedRefresh();
             runAndWait(() -> {
                 credentialList.getItems().clear();
                 addStoredCredentials();
@@ -296,13 +304,14 @@ public class CredentialManager implements PreferencesTabProvider {
         try {
             Arrays.stream(preferences.childrenNames()).map(nodeName -> preferences.node(nodeName)).forEach(node -> {
                 try {
-                    String name = node.name();
+                    String name = node.get(NAME_PREF_KEY, null);
                     String masterUrl = node.get(MASTER_URL_PREF_KEY, null);
+                    String heapsterUrl = node.get(HEAPSTER_URL_PREF_KEY, null);
                     String username = node.get(USERNAME_PREF_KEY, null);
                     String password = node.get(PASSWORD_PREF_KEY, null);
                     boolean isActive = node.getBoolean(IS_ACTIVE_PREF_KEY, false);
                     if (name != null && masterUrl != null && username != null && password != null) {
-                        BasicAuthCredential basicAuthCredential = new BasicAuthCredential(name, username, password, masterUrl, node);
+                        BasicAuthCredential basicAuthCredential = new BasicAuthCredential(name, username, password, masterUrl, heapsterUrl, node);
                         basicAuthCredential.isActive().set(isActive);
                         if (!credentialList.getItems().contains(basicAuthCredential)) {
                             credentialList.getItems().add(basicAuthCredential);
@@ -334,6 +343,7 @@ public class CredentialManager implements PreferencesTabProvider {
         KubeConfigUtils.parseConfig(configFile).ifPresent(activeConfig -> {
             String name = activeConfig.getName();
             String masterUrl = activeConfig.getMasterUrl();
+            String heapsterUrl = activeConfig.getMasterUrl() + HEAPSTER_DEFAULT_URL_PATH;
             String username = activeConfig.getUsername();
             String password = activeConfig.getPassword();
             if (name != null && masterUrl != null && username != null && password != null) {
@@ -347,7 +357,7 @@ public class CredentialManager implements PreferencesTabProvider {
                 } else {
                     if (credentialList.getItems().isEmpty()) {
                         Preferences node = preferences.node(name);
-                        BasicAuthCredential basicAuthCredential = new BasicAuthCredential(name, username, password, masterUrl, node);
+                        BasicAuthCredential basicAuthCredential = new BasicAuthCredential(name, username, password, masterUrl, heapsterUrl, node);
                         credentialList.getItems().add(basicAuthCredential);
                         credentialList.getSelectionModel().select(basicAuthCredential);
                         refreshSelections();
@@ -362,6 +372,7 @@ public class CredentialManager implements PreferencesTabProvider {
             }
         });
     }
+    private static final String HEAPSTER_DEFAULT_URL_PATH = "api/v1/proxy/namespaces/kube-system/services/heapster/";
 
     private void selectCredentialFromExistingList() {
         Optional<BasicAuthCredential> activeCredential = credentialList.getItems().stream().filter(item -> item.isActive().get()).findFirst();
@@ -392,13 +403,15 @@ public class CredentialManager implements PreferencesTabProvider {
                     }
                     nameTextField.setText(selectedCredential.getName());
                     hostNameTextField.setText(selectedCredential.getMasterUrl());
+                    heapsterUrlTextField.setText(selectedCredential.getHeapsterUrl());
                     selectionInfo.getSelectedCredential().set(Optional.ofNullable(selectedCredential));
                     credentialList.getItems().forEach(item -> item.isActive().set(false));
                     selectedCredential.isActive().set(true);
-                    updateKubernetesClientConfig(selectedCredential);
+                    triggerDelayedRefresh();
                 } else {
                     nameTextField.setText("");
                     hostNameTextField.setText("");
+                    heapsterUrlTextField.setText("");
                     usernameTextField.setText("");
                     passwordTextField.setText("");
                     selectionInfo.getSelectedCredential().set(Optional.empty());
@@ -410,27 +423,8 @@ public class CredentialManager implements PreferencesTabProvider {
 
     }
 
-    private void updateKubernetesClientConfig(BasicAuthCredential authCredential) {
-        try {
-            Configuration configuration = configAdmin.getConfiguration(KubernetesClient.PID);
-            Hashtable<String, String> properties = new Hashtable<>();
-            if (authCredential.getMasterUrl() != null) {
-                properties.put(MASTER_URL_PREF_KEY, authCredential.getMasterUrl());
-                if (authCredential.getUsername() != null && authCredential.getPassword() != null) {
-                    properties.put(USERNAME_PREF_KEY, authCredential.getUsername());
-                    properties.put(PASSWORD_PREF_KEY, authCredential.getPassword());
-                    properties.put(IS_ACTIVE_PREF_KEY, Boolean.TRUE.toString());
-                } else {
-                    properties.put(USERNAME_PREF_KEY, "");
-                    properties.put(PASSWORD_PREF_KEY, "");
-                    properties.put(IS_ACTIVE_PREF_KEY, Boolean.TRUE.toString());
-                }
-                configuration.update(properties);
-                FxTimer.runLater(Duration.ofMillis(750), () -> refreshAction.invokeAction());
-            }
-        } catch (IOException ex) {
-            LOG.error(ex.getMessage(), ex);
-        }
+    private void triggerDelayedRefresh() {
+        FxTimer.runLater(Duration.ofMillis(750), () -> refreshAction.invokeAction());
     }
 
     @Reference
@@ -443,17 +437,14 @@ public class CredentialManager implements PreferencesTabProvider {
         this.refreshAction = refreshAction;
     }
 
-    @Reference
-    public void setConfigAdmin(ConfigurationAdmin configAdmin) {
-        this.configAdmin = configAdmin;
-    }
-
     private void updateSelectedCredential(BasicAuthCredential selectedCredential) {
         String name = nameTextField.getText().trim();
         String masterUrl = hostNameTextField.getText().trim();
+        String heapsterUrl = heapsterUrlTextField.getText().trim();
         String username = usernameTextField.getText().trim();
         String password = passwordTextField.getText().trim();
         selectedCredential.setMasterUrl(masterUrl);
+        selectedCredential.setHeapsterUrl(heapsterUrl);
         selectedCredential.setName(name);
         selectedCredential.setUsername(username);
         selectedCredential.setPassword(password);

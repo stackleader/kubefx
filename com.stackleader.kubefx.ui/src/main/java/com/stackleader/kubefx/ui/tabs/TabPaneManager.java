@@ -5,7 +5,7 @@ import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Deactivate;
 import aQute.bnd.annotation.component.Reference;
 import com.stackleader.kubefx.tabs.api.TabProvider;
-import com.stackleader.kubefx.ui.selections.SelectionInfo;
+import com.stackleader.kubefx.selections.api.SelectionInfo;
 import static com.stackleader.kubefx.ui.utils.FXUtilities.runAndWait;
 import java.util.Comparator;
 import java.util.HashMap;

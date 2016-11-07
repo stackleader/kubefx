@@ -61,9 +61,11 @@ public class PreferencesTabManager {
         runAndWait(() -> {
             stage = new Stage();
             pane = new TabPane();
+            final Scene scene = new Scene(pane);
+//            StyleUtils.applyDarkTheme(pane);
             pane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
             setAnchorPaneConstraints(pane);
-            stage.setScene(new Scene(pane));
+            stage.setScene(scene);
             pane.setPrefSize(800, 500);
             stage.sizeToScene();
             stage.centerOnScreen();

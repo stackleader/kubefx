@@ -2,7 +2,8 @@ package com.stackleader.kubefx.kubernetes.impl;
 
 import com.stackleader.kubefx.heapster.api.HeapsterClient;
 import com.stackleader.kubefx.heapster.api.HeapsterClient.PodCpuUsage;
-import com.stackleader.kubefx.kubernetes.api.KubernetesClient;
+import com.stackleader.kubefx.kubernetes.api.model.BasicAuthCredential;
+import com.stackleader.kubefx.selections.api.SelectionInfo;
 import java.io.IOException;
 import java.util.Optional;
 import javafx.beans.value.ChangeListener;
@@ -22,29 +23,48 @@ public class HeapsterClientImpl implements HeapsterClient {
 
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(HeapsterClientImpl.class);
     private RetroFitServiceGenerator serviceGenerator;
-    private KubernetesClientImpl kubernetesClient;
     private HeapsterClientInternal clientInternal;
+    private SelectionInfo selectionInfo;
 
     @Activate
     public void activate() {
-        kubernetesClient.getClient().addListener(new ChangeListener<io.fabric8.kubernetes.client.KubernetesClient>() {
+        selectionInfo.getSelectedCredential().addListener(new ChangeListener<Optional<BasicAuthCredential>>() {
             @Override
-            public void changed(ObservableValue<? extends io.fabric8.kubernetes.client.KubernetesClient> observable, io.fabric8.kubernetes.client.KubernetesClient oldValue, io.fabric8.kubernetes.client.KubernetesClient newValue) {
-                if (newValue != null) {
-                    clientInternal = serviceGenerator.createService(HeapsterClientInternal.class, newValue.getConfiguration());
+            public void changed(ObservableValue<? extends Optional<BasicAuthCredential>> observable,
+                    Optional<BasicAuthCredential> oldValue,
+                    Optional<BasicAuthCredential> newValue) {
+                if (newValue.isPresent()) {
+                    newValue.ifPresent((BasicAuthCredential credential) -> {
+                        try {
+                            clientInternal = serviceGenerator.createService(HeapsterClientInternal.class, credential);
+                        } catch (Exception ex) {
+                            LOG.error("Could not create heapster client, enable debug logging for more details");
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug(ex.getMessage(), ex);
+                            }
+                        }
+                    });
                 } else {
                     clientInternal = null;
                 }
             }
         });
-        if (kubernetesClient.getClient().get() != null) {
-            clientInternal = serviceGenerator.createService(HeapsterClientInternal.class, kubernetesClient.getClient().get().getConfiguration());
+
+        if (selectionInfo.getSelectedCredential().get().isPresent()) {
+            try {
+                clientInternal = serviceGenerator.createService(HeapsterClientInternal.class, selectionInfo.getSelectedCredential().get().get());
+            } catch (Exception ex) {
+                LOG.error("Could not create heapster client, enable debug logging for more details");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(ex.getMessage(), ex);
+                }
+            }
         }
     }
 
     @Reference
-    public void setKubernetesClient(KubernetesClient kubernetesClient) {
-        this.kubernetesClient = (KubernetesClientImpl) kubernetesClient;
+    public void setSelectionInfo(SelectionInfo selectionInfo) {
+        this.selectionInfo = selectionInfo;
     }
 
     @Reference
@@ -87,6 +107,36 @@ public class HeapsterClientImpl implements HeapsterClient {
         if (clientInternal != null) {
             PodMemoryUsage body = null;
             final Call<PodMemoryUsage> podCpuUsage = clientInternal.podMemoryUsage(namespace, podName);
+            try {
+                body = podCpuUsage.execute().body();
+            } catch (IOException ex) {
+                LOG.error(ex.getMessage(), ex);
+            }
+            return Optional.ofNullable(body);
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<PodNetworkIn> getPodNetworkIn(String namespace, String podName) {
+        if (clientInternal != null) {
+            PodNetworkIn body = null;
+            final Call<PodNetworkIn> podCpuUsage = clientInternal.podNetworkIn(namespace, podName);
+            try {
+                body = podCpuUsage.execute().body();
+            } catch (IOException ex) {
+                LOG.error(ex.getMessage(), ex);
+            }
+            return Optional.ofNullable(body);
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<PodNetworkOut> getPodNetworkOut(String namespace, String podName) {
+        if (clientInternal != null) {
+            PodNetworkOut body = null;
+            final Call<PodNetworkOut> podCpuUsage = clientInternal.podNetworkOut(namespace, podName);
             try {
                 body = podCpuUsage.execute().body();
             } catch (IOException ex) {
