@@ -23,10 +23,6 @@ public class Footer extends HBox {
         setMaxHeight(FIXED_HEIGHT);
         setPrefHeight(FIXED_HEIGHT);
         memoryTracker = new MemoryTracker();
-////        spacer = new Pane();
-//        spacer.setMaxHeight(FIXED_HEIGHT);
-//        spacer.setPrefHeight(FIXED_HEIGHT);
-//        HBox.setHgrow(spacer, Priority.ALWAYS);
         getChildren().addAll(memoryTracker);
     }
 

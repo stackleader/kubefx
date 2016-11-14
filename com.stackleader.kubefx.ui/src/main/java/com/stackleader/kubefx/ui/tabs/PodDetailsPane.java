@@ -15,6 +15,7 @@ import eu.hansolo.medusa.GaugeBuilder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -32,6 +33,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.scene.chart.AreaChart;
+import javafx.scene.chart.BarChart;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
@@ -49,6 +51,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.util.Callback;
 import javafx.util.Pair;
+import javafx.util.StringConverter;
 import okhttp3.Call;
 import okhttp3.Response;
 import org.osgi.framework.BundleContext;
@@ -289,7 +292,8 @@ public class PodDetailsPane extends StackPane {
     private Label memoryGuageLabel;
     private Gauge memoryGuage;
     private XYChart.Series<String, Number> cpuChartData;
-    private XYChart.Series<String, Number> ioChartData;
+    private XYChart.Series<String, Number> ioOutChartData;
+    private XYChart.Series<String, Number> ioInChartData;
 
     private void updateCpuUsageRateData(Pod selectedPod) {
         CompletableFuture.<Void>supplyAsync(() -> {
@@ -353,27 +357,61 @@ public class PodDetailsPane extends StackPane {
     }
 
     private void initializeIoChart() {
-        final CategoryAxis timeAxis = new CategoryAxis();
-        timeAxis.setAutoRanging(true);
+        final CategoryAxis labelAxis = new CategoryAxis();
+        labelAxis.setAutoRanging(true);
         final NumberAxis yCpuUsageAxis = new NumberAxis();
+        yCpuUsageAxis.setTickLabelFormatter(new StringConverter<Number>() {
+            @Override
+            public String toString(Number object) {
+                DecimalFormat dec = new DecimalFormat("0.00");
+                double m = ((object.longValue() / 1024.0) / 1024.0);
+                return dec.format(m).concat(" MB");
+            }
+
+            @Override
+            public Number fromString(String string) {
+                Long l = Long.parseLong(string.substring(0, string.indexOf(" MB")));
+                return (l * 1024) * 1024;
+            }
+        });
         yCpuUsageAxis.setAutoRanging(true);
-        AreaChart<String, Number> ac = new AreaChart<>(timeAxis, yCpuUsageAxis);
-        ac.getStylesheets().add(bc.getBundle().getEntry("chartStyle.css").toExternalForm());
-        ioChartData = new XYChart.Series();
-        ioChartData.setName("Network IO Last 15 Minutes");
-        ioPane.getChildren().add(ac);
-        ac.getData().add(ioChartData);
+        BarChart<String, Number> barc = new BarChart<>(labelAxis, yCpuUsageAxis);
+        barc.getStylesheets().add(bc.getBundle().getEntry("chartStyle.css").toExternalForm());
+        ioOutChartData = new XYChart.Series();
+        ioInChartData = new XYChart.Series();
+        ioOutChartData.setName("Out");
+        ioInChartData.setName("In");
+        ioPane.getChildren().add(barc);
+        barc.getData().add(ioOutChartData);
+        barc.getData().add(ioInChartData);
     }
 
     private void updateIoUsageData(Pod selectedPod) {
-          CompletableFuture.<Void>supplyAsync(() -> {
+        CompletableFuture.<Void>supplyAsync(() -> {
             heapsterClient.getPodNetworkOut(selectedPod.getNamespace(), selectedPod.getName()).ifPresent(podIoOut -> {
                 Platform.runLater(() -> {
-                    ioChartData.getData().clear();
+                    ioOutChartData.getData().clear();
                     List<HeapsterClient.MemoryMetric> metrics = podIoOut.metrics;
                     DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("HH:mm");
-                    metrics.stream().forEach(m -> {
-                        ioChartData.getData().add(new XYChart.Data(m.timestamp.format(dateFormat), m.value.getValue()));
+                    metrics.stream().filter(m -> m.timestamp.equals(podIoOut.latestTimestamp)).forEach(m -> {
+                        ioOutChartData.getData().add(new XYChart.Data("", m.value.getValue()));
+                    });
+                });
+            });
+            return null;
+        }).whenComplete((u, t) -> {
+            if (t != null) {
+                Throwable ex = (Throwable) t;
+                LOG.error(ex.getMessage(), ex);
+            }
+        });
+        CompletableFuture.<Void>supplyAsync(() -> {
+            heapsterClient.getPodNetworkIn(selectedPod.getNamespace(), selectedPod.getName()).ifPresent(podIoIn -> {
+                Platform.runLater(() -> {
+                    ioInChartData.getData().clear();
+                    List<HeapsterClient.MemoryMetric> metrics = podIoIn.metrics;
+                    metrics.stream().filter(m -> m.timestamp.equals(podIoIn.latestTimestamp)).forEach(m -> {
+                        ioInChartData.getData().add(new XYChart.Data("", m.value.getValue()));
                     });
                 });
             });
