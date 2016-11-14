@@ -6,6 +6,8 @@ KubeFx
 An open source tool for working with kubernetes written in JavaFX.
 
 ![KubeFx Screenshot](images/screenshot.png)
+![KubeFx Screenshot](images/screenshot1.jpg)
+![KubeFx Screenshot](images/screenshot2.jpg)
 
 Features
 --------
