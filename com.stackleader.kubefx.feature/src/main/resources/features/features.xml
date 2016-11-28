@@ -38,7 +38,6 @@
         <bundle>mvn:${project.groupId}/com.stackleader.kubefx.selections.api/${project.version}</bundle>
         <bundle>mvn:${project.groupId}/com.stackleader.kubefx.kubernetes.impl/${project.version}</bundle>
         <bundle>mvn:${project.groupId}/com.stackleader.kubefx.ui/${project.version}</bundle>
-        <bundle>mvn:${project.groupId}/com.stackleader.kubefx.menu.api/${project.version}</bundle>
         <bundle>mvn:${project.groupId}/com.stackleader.kubefx.toolbar.api/${project.version}</bundle>
         <bundle>mvn:${project.groupId}/com.stackleader.kubefx.tabs.api/${project.version}</bundle>
     </feature>
