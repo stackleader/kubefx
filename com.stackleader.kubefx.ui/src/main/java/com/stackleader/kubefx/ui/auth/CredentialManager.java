@@ -372,7 +372,7 @@ public class CredentialManager implements PreferencesTabProvider {
             }
         });
     }
-    private static final String HEAPSTER_DEFAULT_URL_PATH = "api/v1/proxy/namespaces/kube-system/services/heapster/";
+    private static final String HEAPSTER_DEFAULT_URL_PATH = "/api/v1/proxy/namespaces/kube-system/services/heapster/";
 
     private void selectCredentialFromExistingList() {
         Optional<BasicAuthCredential> activeCredential = credentialList.getItems().stream().filter(item -> item.isActive().get()).findFirst();

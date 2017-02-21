@@ -34,16 +34,14 @@ public class HeapsterClientImpl implements HeapsterClient {
                     Optional<BasicAuthCredential> oldValue,
                     Optional<BasicAuthCredential> newValue) {
                 if (newValue.isPresent()) {
-                    newValue.ifPresent((BasicAuthCredential credential) -> {
-                        try {
-                            clientInternal = serviceGenerator.createService(HeapsterClientInternal.class, credential);
-                        } catch (Exception ex) {
-                            LOG.error("Could not create heapster client, enable debug logging for more details");
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug(ex.getMessage(), ex);
-                            }
+                    try {
+                        clientInternal = serviceGenerator.createService(HeapsterClientInternal.class, newValue.get());
+                    } catch (Exception ex) {
+                        LOG.error("Could not create heapster client, enable debug logging for more details");
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug(ex.getMessage(), ex);
                         }
-                    });
+                    }
                 } else {
                     clientInternal = null;
                 }

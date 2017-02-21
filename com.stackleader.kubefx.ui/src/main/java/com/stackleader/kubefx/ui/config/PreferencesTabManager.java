@@ -77,8 +77,7 @@ public class PreferencesTabManager {
     public void showPreferences() {
         Platform.runLater(() -> {
             stage.show();
-            stage.setAlwaysOnTop(true);
-            stage.setAlwaysOnTop(false);
+            stage.toFront();
         });
     }
 }

@@ -71,8 +71,12 @@ public class RetroFitServiceGenerator {
 
     public <S> S createService(Class<S> serviceClass, BasicAuthCredential basicAuthCredential) {
         initializeHttpClient(basicAuthCredential);
+        String heapsterUrl = basicAuthCredential.getHeapsterUrl();
+        if (!heapsterUrl.endsWith("/")) {
+            heapsterUrl += "/";
+        }
         builder = new Retrofit.Builder()
-                .baseUrl(basicAuthCredential.getHeapsterUrl())
+                .baseUrl(heapsterUrl)
                 .addConverterFactory(GsonConverterFactory.create(createCustomGson()));
         Retrofit retrofit = builder.client(httpClient.build()).build();
         return retrofit.create(serviceClass);

@@ -90,37 +90,31 @@
                 <groupId>org.reactfx</groupId>
                 <artifactId>reactfx</artifactId>
                 <version>2.0-M5</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>com.miglayout</groupId>
                 <artifactId>miglayout-core</artifactId>
                 <version>5.0</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>com.miglayout</groupId>
                 <artifactId>miglayout-javafx</artifactId>
                 <version>5.0</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>de.jensd</groupId>
                 <artifactId>fontawesomefx</artifactId>
                 <version>8.9</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.controlsfx</groupId>
                 <artifactId>controlsfx</artifactId>
                 <version>8.40.11</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>19.0</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.osgi</groupId>
@@ -206,43 +200,41 @@
                 <groupId>com.stackleader</groupId>
                 <artifactId>com.stackleader.kubefx.core</artifactId>
                 <version>${project.version}</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>com.stackleader</groupId>
                 <artifactId>com.stackleader.kubefx.preferences</artifactId>
                 <version>${project.version}</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>com.stackleader</groupId>
                 <artifactId>com.stackleader.kubefx.kubernetes.api</artifactId>
                 <version>${project.version}</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>com.stackleader</groupId>
                 <artifactId>com.stackleader.kubefx.selections.api</artifactId>
                 <version>${project.version}</version>
-                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>com.stackleader.kubefx.kubernetes.impl</artifactId>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.stackleader</groupId>
                 <artifactId>com.stackleader.kubefx.ui</artifactId>
                 <version>${project.version}</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>com.stackleader</groupId>
                 <artifactId>com.stackleader.kubefx.toolbar.api</artifactId>
                 <version>${project.version}</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>com.stackleader</groupId>
                 <artifactId>com.stackleader.kubefx.tabs.api</artifactId>
                 <version>${project.version}</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>com.stackleader</groupId>
@@ -296,7 +288,7 @@
                 <plugin>
                     <groupId>org.apache.felix</groupId>
                     <artifactId>maven-bundle-plugin</artifactId>
-                    <version>3.0.1</version>
+                    <version>3.2.0</version>
                 </plugin>
                 <plugin>
                     <groupId>biz.aQute.bnd</groupId>
